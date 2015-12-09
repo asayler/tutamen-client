@@ -8,7 +8,7 @@ import os
 
 import click
 
-import client
+from pytutamen import client
 
 ### Constants ###
 
