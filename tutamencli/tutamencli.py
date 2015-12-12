@@ -48,11 +48,11 @@ def collections(obj):
     obj['collections_client'] = client.CollectionsClient(obj['client'])
 
 @collections.command(name='create')
-@click.option('--usermetadata', default={}, type=click.STRING)
+@click.option('--usermetadata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def collections_create(obj, usermetadata):
 
-    click.echo(obj['collections_client'].create(usermetadata=usermetadata))
+    click.echo(obj['collections_client'].create(usermetadata=dict(usermetadata)))
 
 ### Secret Storage Commands ###
 
@@ -73,11 +73,11 @@ def secrets_get_data(obj, col_uid, sec_uid):
 @secrets.command(name='create')
 @click.argument('col_uid', type=click.UUID)
 @click.argument('data', type=click.STRING)
-@click.option('--usermetadata', default={}, type=click.STRING)
+@click.option('--usermetadata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def secrets_create(obj, col_uid, data, usermetadata):
 
-    click.echo(obj['secrets_client'].create(col_uid, data, usermetadata=usermetadata))
+    click.echo(obj['secrets_client'].create(col_uid, data, usermetadata=dict(usermetadata)))
 
 ### Main ###
 
