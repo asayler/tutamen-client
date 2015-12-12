@@ -31,7 +31,7 @@ def cli(ctx, url, cert, key, ca):
     """COG CLI"""
 
     # Setup Client
-    c = client.Client(url_server=url, path_ca=ca, path_cert=cert, path_key=key)
+    c = client.Client(url_server=url, path_cert=cert, path_key=key, path_ca=ca)
     c.open()
     ctx.call_on_close(c.close)
 
@@ -48,11 +48,11 @@ def collections(obj):
     obj['collections_client'] = client.CollectionsClient(obj['client'])
 
 @collections.command(name='create')
-@click.option('--metadata', default={}, type=click.STRING)
+@click.option('--usermetadata', default={}, type=click.STRING)
 @click.pass_obj
-def collections_create(obj, metadata):
+def collections_create(obj, usermetadata):
 
-    click.echo(obj['collections_client'].create(metadata=metadata))
+    click.echo(obj['collections_client'].create(usermetadata=usermetadata))
 
 ### Secret Storage Commands ###
 
@@ -73,11 +73,11 @@ def secrets_get_data(obj, col_uid, sec_uid):
 @secrets.command(name='create')
 @click.argument('col_uid', type=click.UUID)
 @click.argument('data', type=click.STRING)
-@click.option('--metadata', default={}, type=click.STRING)
+@click.option('--usermetadata', default={}, type=click.STRING)
 @click.pass_obj
-def secrets_create(obj, col_uid, data, metadata):
+def secrets_create(obj, col_uid, data, usermetadata):
 
-    click.echo(obj['secrets_client'].create(col_uid, data, metadata=metadata))
+    click.echo(obj['secrets_client'].create(col_uid, data, usermetadata=usermetadata))
 
 ### Main ###
 
