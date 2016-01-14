@@ -93,9 +93,10 @@ def bootstrap_account(obj, country, state, locality, organization, ou, email,
                                           client_userdata=dict(client_userdata),
                                           client_uid=client_uid,
                                           client_csr=csr_pem)
-    account_uid, client_uid = ret
+    account_uid, client_uid, client_cert = ret
     click.echo("Account UUID: {}".format(str(account_uid)))
     click.echo("Client UUID: {}".format(str(client_uid)))
+    click.echo("Client Cert: {}".format(client_cert))
 
 
 # ### Collection Storage Commands ###
