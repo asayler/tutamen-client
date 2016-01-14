@@ -16,22 +16,25 @@ from pytutamen import crypto
 ### Constants ###
 
 _APP_NAME = 'tutamen-cli'
-_PATH_SERVER_CONF = os.path.join(click.get_app_dir(_APP_NAME), 'servers')
+_PATH_CONF = os.path.join(click.get_app_dir(_APP_NAME), 'config')
 
 _CLIENT_CN = "New Tutamen Client"
 
 ### CLI Root ###
 
 @click.group()
-@click.option('--url', prompt=True, help="API URL")
-@click.option('--client_cert', default=None, help="Client Certificate File",
+@click.option('--srv_ac', prompt=True, help="Access Control Server Config Name")
+@click.option('--url_ac', prompt=True, help="Access Control Server URL")
+@click.option('--ca_cert_ac', default=None, help="Access Control Server CA Certificate File",
               type=click.Path(resolve_path=True))
-@click.option('--client_key', default=None, help="Client Private Key File",
+@click.option('--srv_ss', prompt=True, help="Storage Server Config Name")
+@click.option('--url_ss', prompt=True, help="Storage Server URL")
+@click.option('--ca_cert_ss', default=None, help="Storage Server CA Certificate File",
               type=click.Path(resolve_path=True))
-@click.option('--ca', default=None, help="API CA Certificate File",
+@click.option('--config_path', default=_PATH_CONF, help="Tutamen Client Config Directory",
               type=click.Path(resolve_path=True))
 @click.pass_context
-def cli(ctx, url, client_cert, client_key, ca):
+def cli(ctx, url, client_cert, client_key, ca, config_dir):
     """COG CLI"""
 
     # Setup Client
@@ -43,7 +46,7 @@ def cli(ctx, url, client_cert, client_key, ca):
     # Setup Context
     ctx.obj = {}
     ctx.obj['apiclient'] = apiclient
-
+    ctx.obj['config_path'] = config_path
 
 ### Bootstrap Commands ###
 
@@ -94,6 +97,9 @@ def bootstrap_account(obj, country, state, locality, organization, ou, email,
                                           client_uid=client_uid,
                                           client_csr=csr_pem)
     account_uid, client_uid, client_cert = ret
+
+    # Save Files
+
     click.echo("Account UUID: {}".format(str(account_uid)))
     click.echo("Client UUID: {}".format(str(client_uid)))
     click.echo("Client Cert: {}".format(client_cert))
