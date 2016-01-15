@@ -99,20 +99,18 @@ def util_setup_account(obj, cn, country, state, locality, organization, ou, emai
 
 ### Bootstrap Commands ###
 
-# @cli.group(name='bootstrap')
-# @click.pass_context
-# def bootstrap(ctx):
+@cli.group(name='bootstrap')
+@click.pass_context
+def bootstrap(ctx):
 
-#     ctx.obj['ac_connection'] =
-#     ctx.obj['client_bootstrap'] = accesscontrol.BootstrapClient(obj['apiclient'])
+    ctx.obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+                                                                account_uid=obj['account_uid'],
+                                                                client_uid=obj['client_uid'],
+                                                                no_client_crt=True,
+                                                                conf=obj['conf'])
+    ctx.obj['client_bootstrap'] = accesscontrol.BootstrapClient(obj['ac_connection'])
 
 # @bootstrap.command(name='account')
-# @click.argument('country', type=click.STRING)
-# @click.argument('state', type=click.STRING)
-# @click.argument('locality', type=click.STRING)
-# @click.argument('organization', type=click.STRING)
-# @click.argument('ou', type=click.STRING)
-# @click.argument('email', type=click.STRING)
 # @click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 # @click.option('--account_uid', default=None, type=click.UUID)
 # @click.option('--client_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
@@ -120,9 +118,9 @@ def util_setup_account(obj, cn, country, state, locality, organization, ou, emai
 # @click.option('--key_file', default=None, help="Private Key File",
 #             type=click.Path(resolve_path=True))
 # @click.pass_obj
-# def bootstrap_account(obj, country, state, locality, organization, ou, email,
+# def bootstrap_account(csr_path,
 #                       account_userdata, account_uid,
-#                       client_userdata, client_uid, key_file):
+#                       client_userdata, client_uid):
 
 #     if len(country) != 2:
 #         raise ValueError("Country must be 2-letter code")
