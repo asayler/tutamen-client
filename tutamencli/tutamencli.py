@@ -8,101 +8,146 @@ import os
 
 import click
 
-from pytutamen import api_client
+from pytutamen import config
+from pytutamen import utilities
 from pytutamen import accesscontrol
-from pytutamen import crypto
-
 
 ### Constants ###
 
 _APP_NAME = 'tutamen-cli'
-_PATH_CONF = os.path.join(click.get_app_dir(_APP_NAME), 'config')
 
-_CLIENT_CN = "New Tutamen Client"
 
 ### CLI Root ###
 
 @click.group()
-@click.option('--srv_ac', prompt=True, help="Access Control Server Config Name")
-@click.option('--url_ac', prompt=True, help="Access Control Server URL")
-@click.option('--ca_cert_ac', default=None, help="Access Control Server CA Certificate File",
-              type=click.Path(resolve_path=True))
-@click.option('--srv_ss', prompt=True, help="Storage Server Config Name")
-@click.option('--url_ss', prompt=True, help="Storage Server URL")
-@click.option('--ca_cert_ss', default=None, help="Storage Server CA Certificate File",
-              type=click.Path(resolve_path=True))
-@click.option('--config_path', default=_PATH_CONF, help="Tutamen Client Config Directory",
+@click.option('--srv_ac', default=None, help="Access Control Server Config Name")
+@click.option('--srv_ss', default=None, help="Storage Server Config Name")
+@click.option('--conf_path', default=None, help="Tutamen Client Config Directory",
               type=click.Path(resolve_path=True))
 @click.pass_context
-def cli(ctx, url, client_cert, client_key, ca, config_dir):
+def cli(ctx, srv_ac, srv_ss, conf_path):
     """COG CLI"""
-
-    # Setup Client
-    apiclient = api_client.APIClient(url_server=url,
-                                     path_cert=client_cert, path_key=client_key, path_ca=ca)
-    apiclient.open()
-    ctx.call_on_close(apiclient.close)
 
     # Setup Context
     ctx.obj = {}
-    ctx.obj['apiclient'] = apiclient
-    ctx.obj['config_path'] = config_path
+    ctx.obj['conf'] = config.ClientConfig(conf_path=conf_path)
+    if not srv_ac:
+        ac_server_name = ctx.obj['conf'].defaults_get_ac_server()
+    ctx.obj['srv_ac'] = srv_ac
+    # if not srv_ss:
+    #     ac_server_name = ctx.obj['conf'].defaults_get_ss_server()
+    # ctx.obj['srv_ss'] = srv_ss
 
-### Bootstrap Commands ###
 
-@cli.group(name='bootstrap')
+### Utility Commands ###
+
+@cli.group(name='util')
+@click.pass_context
+def util(ctx):
+    pass
+
+@util.command(name='setup_ac_server')
+@click.argument('name', type=click.STRING)
+@click.argument('url', type=click.STRING)
 @click.pass_obj
-def bootstrap(obj):
+def util_setup_ac_server(obj, name, url):
 
-    obj['bootstrap_client'] = accesscontrol.BootstrapClient(obj['apiclient'])
+    utilities.setup_new_ac_server(name, url, conf=obj['conf'])
 
-@bootstrap.command(name='account')
-@click.argument('country', type=click.STRING)
-@click.argument('state', type=click.STRING)
-@click.argument('locality', type=click.STRING)
-@click.argument('organization', type=click.STRING)
-@click.argument('ou', type=click.STRING)
-@click.argument('email', type=click.STRING)
+# @util.command(name='setup_ss_server')
+# @click.argument('name', type=click.STRING)
+# @click.argument('url', type=click.STRING)
+# @click.pass_obj
+# def util_setup_ss_server(obj, name, url):
+
+#     utilities.setup_new_ss_server(name, url, conf=obj['conf'])
+
+@util.command(name='setup_account')
+@click.option('--cn', default=None, type=click.STRING)
+@click.option('--country', default=None, type=click.STRING)
+@click.option('--state', default=None, type=click.STRING)
+@click.option('--locality', default=None, type=click.STRING)
+@click.option('--organization', default=None, type=click.STRING)
+@click.option('--ou', default=None, type=click.STRING)
+@click.option('--email', default=None, type=click.STRING)
 @click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.option('--account_uid', default=None, type=click.UUID)
 @click.option('--client_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.option('--client_uid', default=None, type=click.UUID)
-@click.option('--key_file', default=None, help="Private Key File",
-            type=click.Path(resolve_path=True))
 @click.pass_obj
-def bootstrap_account(obj, country, state, locality, organization, ou, email,
-                      account_userdata, account_uid,
-                      client_userdata, client_uid, key_file):
+def util_setup_account(obj, cn, country, state, locality, organization, ou, email,
+                       account_userdata, account_uid, client_userdata, client_uid):
 
-    if len(country) != 2:
-        raise ValueError("Country must be 2-letter code")
+    ret = utilities.setup_new_account(ac_server_name=obj['srv_ac'],
+                                      cn=cn, country=country, state=state, locality=locality,
+                                      organization=organization, ou=ou, email=email,
+                                      account_userdata=dict(account_userdata),
+                                      account_uid=account_uid,
+                                      client_userdata=dict(client_userdata),
+                                      client_uid=client_uid,
+                                      conf=obj['conf'])
 
-    if not key_file:
-        key_pem = crypto.gen_key()
-    else:
-        with open(key_file, 'r') as f:
-            key_pem = f.read()
-
-    with open("key.pem", 'w') as f:
-        f.write(key_pem)
-
-    csr_pem = crypto.gen_csr(key_pem, _CLIENT_CN, country, state, locality, organization, ou, email)
-
-    with open("csr.pem", 'w') as f:
-        f.write(csr_pem)
-
-    ret = obj['bootstrap_client'].account(account_userdata=dict(account_userdata),
-                                          account_uid=account_uid,
-                                          client_userdata=dict(client_userdata),
-                                          client_uid=client_uid,
-                                          client_csr=csr_pem)
     account_uid, client_uid, client_cert = ret
-
-    # Save Files
-
     click.echo("Account UUID: {}".format(str(account_uid)))
     click.echo("Client UUID: {}".format(str(client_uid)))
-    click.echo("Client Cert: {}".format(client_cert))
+
+
+### Bootstrap Commands ###
+
+# @cli.group(name='bootstrap')
+# @click.pass_context
+# def bootstrap(ctx):
+
+#     ctx.obj['ac_connection'] =
+#     ctx.obj['client_bootstrap'] = accesscontrol.BootstrapClient(obj['apiclient'])
+
+# @bootstrap.command(name='account')
+# @click.argument('country', type=click.STRING)
+# @click.argument('state', type=click.STRING)
+# @click.argument('locality', type=click.STRING)
+# @click.argument('organization', type=click.STRING)
+# @click.argument('ou', type=click.STRING)
+# @click.argument('email', type=click.STRING)
+# @click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+# @click.option('--account_uid', default=None, type=click.UUID)
+# @click.option('--client_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+# @click.option('--client_uid', default=None, type=click.UUID)
+# @click.option('--key_file', default=None, help="Private Key File",
+#             type=click.Path(resolve_path=True))
+# @click.pass_obj
+# def bootstrap_account(obj, country, state, locality, organization, ou, email,
+#                       account_userdata, account_uid,
+#                       client_userdata, client_uid, key_file):
+
+#     if len(country) != 2:
+#         raise ValueError("Country must be 2-letter code")
+
+#     if not key_file:
+#         key_pem = crypto.gen_key()
+#     else:
+#         with open(key_file, 'r') as f:
+#             key_pem = f.read()
+
+#     with open("key.pem", 'w') as f:
+#         f.write(key_pem)
+
+#     csr_pem = crypto.gen_csr(key_pem, _CLIENT_CN, country, state, locality, organization, ou, email)
+
+#     with open("csr.pem", 'w') as f:
+#         f.write(csr_pem)
+
+#     ret = obj['bootstrap_client'].account(account_userdata=dict(account_userdata),
+#                                           account_uid=account_uid,
+#                                           client_userdata=dict(client_userdata),
+#                                           client_uid=client_uid,
+#                                           client_csr=csr_pem)
+#     account_uid, client_uid, client_cert = ret
+
+#     # Save Files
+
+#     click.echo("Account UUID: {}".format(str(account_uid)))
+#     click.echo("Client UUID: {}".format(str(client_uid)))
+#     click.echo("Client Cert: {}".format(client_cert))
 
 
 # ### Collection Storage Commands ###
