@@ -22,10 +22,12 @@ _APP_NAME = 'tutamen-cli'
 @click.group()
 @click.option('--srv_ac', default=None, help="Access Control Server Config Name")
 @click.option('--srv_ss', default=None, help="Storage Server Config Name")
+@click.option('--account_uid', default=None, type=click.UUID)
+@click.option('--client_uid', default=None, type=click.UUID)
 @click.option('--conf_path', default=None, help="Tutamen Client Config Directory",
               type=click.Path(resolve_path=True))
 @click.pass_context
-def cli(ctx, srv_ac, srv_ss, conf_path):
+def cli(ctx, srv_ac, srv_ss, client_uid, account_uid, conf_path):
     """COG CLI"""
 
     # Setup Context
@@ -37,7 +39,12 @@ def cli(ctx, srv_ac, srv_ss, conf_path):
     # if not srv_ss:
     #     ac_server_name = ctx.obj['conf'].defaults_get_ss_server()
     # ctx.obj['srv_ss'] = srv_ss
-
+    if not account_uid:
+        account_uid = ctx.obj['conf'].defaults_get_account_uid()
+    ctx.obj['account_uid'] = account_uid
+    if not client_uid:
+        client_uid = ctx.obj['conf'].defaults_get_client_uid()
+    ctx.obj['client_uid'] = client_uid
 
 ### Utility Commands ###
 
@@ -71,20 +78,18 @@ def util_setup_ac_server(obj, name, url):
 @click.option('--ou', default=None, type=click.STRING)
 @click.option('--email', default=None, type=click.STRING)
 @click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
-@click.option('--account_uid', default=None, type=click.UUID)
 @click.option('--client_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
-@click.option('--client_uid', default=None, type=click.UUID)
 @click.pass_obj
 def util_setup_account(obj, cn, country, state, locality, organization, ou, email,
-                       account_userdata, account_uid, client_userdata, client_uid):
+                       account_userdata, client_userdata):
 
     ret = utilities.setup_new_account(ac_server_name=obj['srv_ac'],
                                       cn=cn, country=country, state=state, locality=locality,
                                       organization=organization, ou=ou, email=email,
                                       account_userdata=dict(account_userdata),
-                                      account_uid=account_uid,
+                                      account_uid=obj['account_uid'],
                                       client_userdata=dict(client_userdata),
-                                      client_uid=client_uid,
+                                      client_uid=obj['client_uid'],
                                       conf=obj['conf'])
 
     account_uid, client_uid, client_cert = ret
