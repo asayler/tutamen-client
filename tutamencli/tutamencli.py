@@ -154,6 +154,33 @@ def bootstrap(ctx):
 #     click.echo("Client Cert: {}".format(client_cert))
 
 
+### Authorizations Commands ###
+
+@cli.group(name='authorizations')
+@click.pass_context
+def authorizations(ctx):
+
+    obj = ctx.obj
+    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+                                                            account_uid=obj['account_uid'],
+                                                            client_uid=obj['client_uid'],
+                                                            conf=obj['conf'])
+    obj['client_authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
+
+@authorizations.command(name='request')
+@click.argument('obj_type', type=click.STRING)
+@click.argument('obj_uid', type=click.UUID)
+@click.argument('obj_perm', type=click.STRING)
+@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.pass_obj
+def util_setup_account(obj, obj_perm, obj_type, obj_uid, userdata):
+
+    with obj['ac_connection']:
+        uid = obj['client_authorizations'].request(obj_type, obj_uid, obj_perm)
+
+    click.echo(uid)
+
+
 # ### Collection Storage Commands ###
 
 # @cli.group(name='collections')
