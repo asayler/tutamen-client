@@ -11,6 +11,7 @@ import click
 from pytutamen import config
 from pytutamen import utilities
 from pytutamen import accesscontrol
+from pytutamen import storage
 
 ### Constants ###
 
@@ -201,20 +202,29 @@ def authorizations_token(obj, uid):
     click.echo(token)
 
 
-# ### Collection Storage Commands ###
+### Collection Storage Commands ###
 
-# @cli.group(name='collections')
-# @click.pass_obj
-# def collections(obj):
+@cli.group(name='collections')
+@click.pass_context
+def collections(ctx):
 
-#     obj['collections_client'] = api_client.CollectionsClient(obj['client'])
+    obj = ctx.obj
+    obj['storage_connection'] = storage.StorageServerConnection(
+        storage_server_name=obj['srv_storage'],
+        conf=obj['conf'])
+    obj['client_collections'] = storage.CollectionsClient(obj['storage_connection'])
 
-# @collections.command(name='create')
-# @click.option('--usermetadata', default={}, nargs=2, type=click.STRING, multiple=True)
-# @click.pass_obj
-# def collections_create(obj, usermetadata):
+@collections.command(name='create')
+@click.option('--uid', default=None, type=click.UUID)
+@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def collections_create(obj, uid, userdata, tokens):
 
-#     click.echo(obj['collections_client'].create(usermetadata=dict(usermetadata)))
+    with obj['storage_connection']:
+        uid = obj['client_collections'].create(tokens, uid=uid, userdata=dict(userdata))
+
+    click.echo(uid)
 
 # ### Secret Storage Commands ###
 
@@ -235,11 +245,11 @@ def authorizations_token(obj, uid):
 # @secrets.command(name='create')
 # @click.argument('col_uid', type=click.UUID)
 # @click.argument('data', type=click.STRING)
-# @click.option('--usermetadata', default={}, nargs=2, type=click.STRING, multiple=True)
+# @click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 # @click.pass_obj
-# def secrets_create(obj, col_uid, data, usermetadata):
+# def secrets_create(obj, col_uid, data, userdata):
 
-#     click.echo(obj['secrets_client'].create(col_uid, data, usermetadata=dict(usermetadata)))
+#     click.echo(obj['secrets_client'].create(col_uid, data, userdata=dict(userdata)))
 
 ### Main ###
 
