@@ -21,13 +21,13 @@ _APP_NAME = 'tutamen-cli'
 
 @click.group()
 @click.option('--srv_ac', default=None, help="Access Control Server Config Name")
-@click.option('--srv_ss', default=None, help="Storage Server Config Name")
+@click.option('--srv_storage', default=None, help="Storage Server Config Name")
 @click.option('--account_uid', default=None, type=click.UUID)
 @click.option('--client_uid', default=None, type=click.UUID)
 @click.option('--conf_path', default=None, help="Tutamen Client Config Directory",
               type=click.Path(resolve_path=True))
 @click.pass_context
-def cli(ctx, srv_ac, srv_ss, client_uid, account_uid, conf_path):
+def cli(ctx, srv_ac, srv_storage, client_uid, account_uid, conf_path):
     """COG CLI"""
 
     # Setup Context
@@ -36,9 +36,9 @@ def cli(ctx, srv_ac, srv_ss, client_uid, account_uid, conf_path):
     if not srv_ac:
         ac_server_name = ctx.obj['conf'].defaults_get_ac_server()
     ctx.obj['srv_ac'] = srv_ac
-    # if not srv_ss:
-    #     ac_server_name = ctx.obj['conf'].defaults_get_ss_server()
-    # ctx.obj['srv_ss'] = srv_ss
+    if not srv_storage:
+        ac_server_name = ctx.obj['conf'].defaults_get_storage_server()
+    ctx.obj['srv_storage'] = srv_storage
     if not account_uid:
         account_uid = ctx.obj['conf'].defaults_get_account_uid()
     ctx.obj['account_uid'] = account_uid
@@ -61,13 +61,13 @@ def util_setup_ac_server(obj, name, url):
 
     utilities.setup_new_ac_server(name, url, conf=obj['conf'])
 
-# @util.command(name='setup_ss_server')
-# @click.argument('name', type=click.STRING)
-# @click.argument('url', type=click.STRING)
-# @click.pass_obj
-# def util_setup_ss_server(obj, name, url):
+@util.command(name='setup_storage_server')
+@click.argument('name', type=click.STRING)
+@click.argument('url', type=click.STRING)
+@click.pass_obj
+def util_setup_storage_server(obj, name, url):
 
-#     utilities.setup_new_ss_server(name, url, conf=obj['conf'])
+    utilities.setup_new_storage_server(name, url, conf=obj['conf'])
 
 @util.command(name='setup_account')
 @click.option('--cn', default=None, type=click.STRING)
