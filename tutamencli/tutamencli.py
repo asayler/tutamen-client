@@ -180,6 +180,26 @@ def authorizations_request(obj, obj_perm, obj_type, obj_uid, userdata):
 
     click.echo(uid)
 
+@authorizations.command(name='fetch')
+@click.argument('uid', type=click.UUID)
+@click.pass_obj
+def authorizations_fetch(obj, uid):
+
+    with obj['ac_connection']:
+        authz = obj['client_authorizations'].fetch(uid)
+
+    click.echo(authz)
+
+@authorizations.command(name='token')
+@click.argument('uid', type=click.UUID)
+@click.pass_obj
+def authorizations_token(obj, uid):
+
+    with obj['ac_connection']:
+        token = obj['client_authorizations'].wait_token(uid)
+
+    click.echo(token)
+
 
 # ### Collection Storage Commands ###
 
