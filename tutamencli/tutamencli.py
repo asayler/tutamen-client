@@ -173,7 +173,7 @@ def authorizations(ctx):
 @click.argument('obj_perm', type=click.STRING)
 @click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
-def util_setup_account(obj, obj_perm, obj_type, obj_uid, userdata):
+def authorizations_request(obj, obj_perm, obj_type, obj_uid, userdata):
 
     with obj['ac_connection']:
         uid = obj['client_authorizations'].request(obj_type, obj_uid, obj_perm)
