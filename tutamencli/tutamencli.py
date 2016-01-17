@@ -103,12 +103,13 @@ def util_setup_account(obj, cn, country, state, locality, organization, ou, emai
 @click.pass_context
 def bootstrap(ctx):
 
-    ctx.obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
-                                                                account_uid=obj['account_uid'],
-                                                                client_uid=obj['client_uid'],
-                                                                no_client_crt=True,
-                                                                conf=obj['conf'])
-    ctx.obj['client_bootstrap'] = accesscontrol.BootstrapClient(obj['ac_connection'])
+    obj = ctx.obj
+    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+                                                            account_uid=obj['account_uid'],
+                                                            client_uid=obj['client_uid'],
+                                                            no_client_crt=True,
+                                                            conf=obj['conf'])
+    obj['client_bootstrap'] = accesscontrol.BootstrapClient(obj['ac_connection'])
 
 # @bootstrap.command(name='account')
 # @click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
