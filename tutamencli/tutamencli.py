@@ -5,6 +5,7 @@
 
 import sys
 import os
+import urllib.parse
 
 import click
 
@@ -35,10 +36,10 @@ def cli(ctx, srv_ac, srv_storage, client_uid, account_uid, conf_path):
     ctx.obj = {}
     ctx.obj['conf'] = config.ClientConfig(conf_path=conf_path)
     if not srv_ac:
-        ac_server_name = ctx.obj['conf'].defaults_get_ac_server()
+        srv_ac = ctx.obj['conf'].defaults_get_ac_server()
     ctx.obj['srv_ac'] = srv_ac
     if not srv_storage:
-        ac_server_name = ctx.obj['conf'].defaults_get_storage_server()
+        srv_storage = ctx.obj['conf'].defaults_get_storage_server()
     ctx.obj['srv_storage'] = srv_storage
     if not account_uid:
         account_uid = ctx.obj['conf'].defaults_get_account_uid()
@@ -209,10 +210,15 @@ def authorizations_token(obj, uid):
 def collections(ctx):
 
     obj = ctx.obj
+
     obj['storage_connection'] = storage.StorageServerConnection(
-        storage_server_name=obj['srv_storage'],
-        conf=obj['conf'])
-    obj['client_collections'] = storage.CollectionsClient(obj['storage_connection'])
+        storage_server_name=obj['srv_storage'], conf=obj['conf'])
+    obj['collections'] = storage.CollectionsClient(obj['storage_connection'])
+
+    obj['ac_connection'] = accesscontrol.ACServerConnection(
+        ac_server_name=obj['srv_ac'], conf=obj['conf'],
+        account_uid=obj['account_uid'], client_uid=obj['client_uid'])
+    obj['authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
 
 @collections.command(name='create')
 @click.option('--uid', default=None, type=click.UUID)
@@ -221,8 +227,25 @@ def collections(ctx):
 @click.pass_obj
 def collections_create(obj, uid, userdata, tokens):
 
+    tokens = list(tokens)
+    if not tokens:
+        with obj['ac_connection']:
+            objtype = obj['collections'].objtype
+            objuid = None
+            objperm = obj['collections'].objperm_create
+            authz_uid = obj['authorizations'].request(objtype, objuid, objperm)
+            authz_token = obj['authorizations'].wait_token(authz_uid)
+        if not authz_token:
+            raise Exception("Authorization denied")
+        tokens = [authz_token]
+
     with obj['storage_connection']:
-        uid = obj['client_collections'].create(tokens, uid=uid, userdata=dict(userdata))
+        userdata = dict(userdata)
+        ac_server_url = obj['conf'].storage_server_get_url(obj['srv_storage'])
+        assert(ac_server_url)
+        ac_servers = [ac_server_url]
+        uid = obj['collections'].create(tokens, ac_servers,
+                                        uid=uid, userdata=userdata)
 
     click.echo(uid)
 
