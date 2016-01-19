@@ -241,7 +241,7 @@ def collections_create(obj, uid, userdata, tokens):
 
     with obj['storage_connection']:
         userdata = dict(userdata)
-        ac_server_url = obj['conf'].storage_server_get_url(obj['srv_storage'])
+        ac_server_url = obj['conf'].ac_server_get_url(obj['srv_ac'])
         assert(ac_server_url)
         ac_servers = [ac_server_url]
         uid = obj['collections'].create(tokens, ac_servers,
@@ -249,13 +249,52 @@ def collections_create(obj, uid, userdata, tokens):
 
     click.echo(uid)
 
-# ### Secret Storage Commands ###
 
-# @cli.group(name='secrets')
-# @click.pass_obj
-# def secrets(obj):
+### Secret Storage Commands ###
 
-#     obj['secrets_client'] = client.SecretsClient(obj['client'])
+@cli.group(name='secrets')
+@click.argument('col_uid', type=click.UUID)
+@click.pass_context
+def secrets(ctx, col_uid):
+
+    obj = ctx.obj
+    obj['col_uid'] = col_uid
+
+    obj['storage_connection'] = storage.StorageServerConnection(
+        storage_server_name=obj['srv_storage'], conf=obj['conf'])
+    obj['secrets'] = storage.SecretsClient(obj['storage_connection'])
+
+    obj['ac_connection'] = accesscontrol.ACServerConnection(
+        ac_server_name=obj['srv_ac'], conf=obj['conf'],
+        account_uid=obj['account_uid'], client_uid=obj['client_uid'])
+    obj['authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
+
+@secrets.command(name='create')
+@click.argument('data', type=click.STRING)
+@click.option('--uid', default=None, type=click.UUID)
+@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def secrets_create(obj, data, uid, userdata, tokens):
+
+    tokens = list(tokens)
+    if not tokens:
+        with obj['ac_connection']:
+            objtype = obj['secrets'].objtype
+            objuid = obj['col_uid']
+            objperm = obj['secrets'].objperm_create
+            authz_uid = obj['authorizations'].request(objtype, objuid, objperm)
+            authz_token = obj['authorizations'].wait_token(authz_uid)
+        if not authz_token:
+            raise Exception("Authorization denied")
+        tokens = [authz_token]
+
+    with obj['storage_connection']:
+        userdata = dict(userdata)
+        uid = obj['secrets'].create(tokens, obj['col_uid'], data,
+                                    uid=uid, userdata=userdata)
+
+    click.echo(uid)
 
 # @secrets.command(name='data')
 # @click.argument('col_uid', type=click.UUID)
@@ -265,14 +304,6 @@ def collections_create(obj, uid, userdata, tokens):
 
 #     click.echo(obj['secrets_client'].data(col_uid, sec_uid))
 
-# @secrets.command(name='create')
-# @click.argument('col_uid', type=click.UUID)
-# @click.argument('data', type=click.STRING)
-# @click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
-# @click.pass_obj
-# def secrets_create(obj, col_uid, data, userdata):
-
-#     click.echo(obj['secrets_client'].create(col_uid, data, userdata=dict(userdata)))
 
 ### Main ###
 
