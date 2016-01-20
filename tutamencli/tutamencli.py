@@ -98,6 +98,22 @@ def util_setup_account(obj, cn, country, state, locality, organization, ou, emai
     click.echo("Account UUID: {}".format(str(account_uid)))
     click.echo("Client UUID: {}".format(str(client_uid)))
 
+@util.command(name='store_secret')
+@click.argument('data', type=click.STRING)
+@click.option('--sec_uid', default=None, type=click.UUID)
+@click.option('--col_uid', default=None, type=click.UUID)
+@click.pass_obj
+def util_store_secret(obj, data, sec_uid, col_uid):
+
+    sec_uid, col_uid = utilities.store_secret(data, sec_uid=sec_uid, col_uid=col_uid,
+                                              conf=obj['conf'],
+                                              ac_server_names=[obj['srv_ac']],
+                                              storage_server_names=[obj['srv_storage']],
+                                              account_uid=obj['account_uid'],
+                                              client_uid=obj['client_uid'])
+
+    click.echo("Stored Secret '{}' in Collection '{}'".format(sec_uid, col_uid))
+
 
 ### Bootstrap Commands ###
 
