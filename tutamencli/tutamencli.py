@@ -296,13 +296,28 @@ def secrets_create(obj, data, uid, userdata, tokens):
 
     click.echo(uid)
 
-# @secrets.command(name='data')
-# @click.argument('col_uid', type=click.UUID)
-# @click.argument('sec_uid', type=click.UUID)
-# @click.pass_obj
-# def secrets_get_data(obj, col_uid, sec_uid):
+@secrets.command(name='fetch')
+@click.argument('uid', type=click.UUID)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def secrets_fetch(obj, uid, tokens):
 
-#     click.echo(obj['secrets_client'].data(col_uid, sec_uid))
+    tokens = list(tokens)
+    if not tokens:
+        with obj['ac_connection']:
+            objtype = obj['secrets'].objtype
+            objuid = obj['col_uid']
+            objperm = obj['secrets'].objperm_fetch
+            authz_uid = obj['authorizations'].request(objtype, objuid, objperm)
+            authz_token = obj['authorizations'].wait_token(authz_uid)
+        if not authz_token:
+            raise Exception("Authorization denied")
+        tokens = [authz_token]
+
+    with obj['storage_connection']:
+        sec = obj['secrets'].fetch(tokens, obj['col_uid'], uid)
+
+    click.echo(sec)
 
 
 ### Main ###
