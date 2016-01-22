@@ -98,21 +98,45 @@ def util_setup_account(obj, cn, country, state, locality, organization, ou, emai
     click.echo("Account UUID: {}".format(str(account_uid)))
     click.echo("Client UUID: {}".format(str(client_uid)))
 
+@util.command(name='setup_collection')
+@click.option('--col_uid', default=None, type=click.UUID)
+@click.option('--verifier', 'verifiers', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.pass_obj
+def util_setup_collection(obj, col_uid, verifiers):
+
+    col_uid, verifiers = utilities.setup_collection(col_uid=col_uid, verifiers=verifiers,
+                                                    conf=obj['conf'],
+                                                    ac_server_names=[obj['srv_ac']],
+                                                    storage_server_names=[obj['srv_storage']],
+                                                    account_uid=obj['account_uid'],
+                                                    client_uid=obj['client_uid'])
+
+    verfiers = [str(v) for v in verifiers]
+    click.echo("Setup collection '{}' using verifiers {}".format(col_uid, verifiers))
+
 @util.command(name='store_secret')
 @click.argument('data', type=click.STRING)
 @click.option('--col_uid', default=None, type=click.UUID)
 @click.option('--sec_uid', default=None, type=click.UUID)
+@click.option('--verifier', 'verifiers', default=[], nargs=1,
+              type=click.UUID, multiple=True)
 @click.pass_obj
-def util_store_secret(obj, data, col_uid, sec_uid):
+def util_store_secret(obj, data, col_uid, sec_uid, verifiers):
 
-    sec_uid, col_uid = utilities.store_secret(data, sec_uid=sec_uid, col_uid=col_uid,
-                                              conf=obj['conf'],
-                                              ac_server_names=[obj['srv_ac']],
-                                              storage_server_names=[obj['srv_storage']],
-                                              account_uid=obj['account_uid'],
-                                              client_uid=obj['client_uid'])
+    sec_uid, col_uid, verifiers = utilities.store_secret(data, sec_uid=sec_uid, col_uid=col_uid,
+                                                         verifiers=verifiers,
+                                                         conf=obj['conf'],
+                                                         ac_server_names=[obj['srv_ac']],
+                                                         storage_server_names=[obj['srv_storage']],
+                                                         account_uid=obj['account_uid'],
+                                                         client_uid=obj['client_uid'])
 
-    click.echo("Stored Secret '{}' in Collection '{}'".format(sec_uid, col_uid))
+    verfiers = [str(v) for v in verifiers]
+    msg = "Stored secret '{}' ".format(sec_uid)
+    msg += "in collection '{}' ".format(col_uid)
+    msg += "using verifiers {}".format(verfiers)
+    click.echo(msg)
 
 @util.command(name='fetch_secret')
 @click.argument('col_uid',  type=click.UUID)
