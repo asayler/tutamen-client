@@ -276,6 +276,61 @@ def verifiers_fetch(obj, uid):
     click.echo(verifiers)
 
 
+### Permissions Commands ###
+
+@cli.group(name='permissions')
+@click.pass_context
+def permissions(ctx):
+
+    obj = ctx.obj
+    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+                                                            account_uid=obj['account_uid'],
+                                                            client_uid=obj['client_uid'],
+                                                            conf=obj['conf'])
+    obj['permissions'] = accesscontrol.PermissionsClient(obj['ac_connection'])
+
+@permissions.command(name='create')
+@click.argument('objtype', type=click.STRING)
+@click.argument('objuid', default=None, type=click.UUID)
+@click.option('--v_create', 'v_create', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--v_read', 'v_read', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--v_modify', 'v_modify', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--v_delete', 'v_delete', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--v_ac', 'v_ac', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--v_default', 'v_default', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.pass_obj
+def permissions_create(obj, objtype, objuid, v_create, v_read,
+                       v_modify, v_delete, v_ac, v_default):
+
+    with obj['ac_connection']:
+        objtype, objuid = obj['permissions'].create(objtype, objuid=objuid,
+                                                    v_create=v_create,
+                                                    v_read=v_read,
+                                                    v_modify=v_modify,
+                                                    v_delete=v_delete,
+                                                    v_ac=v_ac,
+                                                    v_default=v_default)
+
+    click.echo("{} {}".format(objtype, objuid))
+
+@permissions.command(name='fetch')
+@click.argument('objtype', type=click.STRING)
+@click.argument('objuid', type=click.UUID)
+@click.pass_obj
+def permissions_fetch(obj, objtype, objuid):
+
+    with obj['ac_connection']:
+        perms = obj['permissions'].fetch(objtype, objuid)
+
+    click.echo(perms)
+
+
 ### Collection Storage Commands ###
 
 @cli.group(name='collections')
