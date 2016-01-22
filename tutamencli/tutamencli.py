@@ -233,6 +233,49 @@ def authorizations_token(obj, uid):
     click.echo(token)
 
 
+### Verifier Commands ###
+
+@cli.group(name='verifier')
+@click.pass_context
+def verifier(ctx):
+
+    obj = ctx.obj
+    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+                                                            account_uid=obj['account_uid'],
+                                                            client_uid=obj['client_uid'],
+                                                            conf=obj['conf'])
+    obj['verifiers'] = accesscontrol.VerifiersClient(obj['ac_connection'])
+
+@verifier.command(name='create')
+@click.option('--uid', default=None,
+              type=click.UUID)
+@click.option('--account', 'accounts', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--authenticator', 'authenticators', default=[], nargs=1,
+              type=click.UUID, multiple=True)
+@click.option('--userdata', default={}, nargs=2,
+              type=click.STRING, multiple=True)
+@click.pass_obj
+def verifier_create(obj, uid, accounts, authenticators, userdata):
+
+    with obj['ac_connection']:
+        uid = obj['verifiers'].create(uid=uid, accounts=accounts,
+                                            authenticators=authenticators,
+                                            userdata=userdata)
+
+    click.echo(uid)
+
+@verifier.command(name='fetch')
+@click.argument('uid', type=click.UUID)
+@click.pass_obj
+def verifier_fetch(obj, uid):
+
+    with obj['ac_connection']:
+        authz = obj['verifiers'].fetch(uid)
+
+    click.echo(authz)
+
+
 ### Collection Storage Commands ###
 
 @cli.group(name='collections')
