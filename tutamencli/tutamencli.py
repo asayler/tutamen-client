@@ -97,40 +97,97 @@ def util_bootstrap_account(obj, country, state, locality, email,
     click.echo("Account UUID: {}".format(str(account_uid)))
     click.echo("Client UUID: {}".format(str(client_uid)))
 
+@util.command(name='get_tokens')
+@click.argument('objtype', type=click.STRING)
+@click.argument('objperm', type=click.STRING)
+@click.argument('objuid', required=False, default=None, type=click.UUID)
+@click.pass_obj
+def util_get_tokens(obj, objtype, objperm, objuid):
+
+    tokens, errors = utilities.get_tokens(objtype, objperm, objuid=objuid,
+                                          ac_server_names=[obj['srv_ac']],
+                                          conf=obj['conf'],
+                                          account_uid=obj['account_uid'],
+                                          client_uid=obj['client_uid'])
+    if tokens:
+        click.echo("Got tokens '{}'".format(tokens))
+    if errors:
+        click.echo("Got errors '{}'".format(errors))
+
+@util.command(name='setup_verifiers')
+@click.option('--verifier_uid', default=None, type=click.UUID)
+@click.option('--account', 'accounts', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--authenticator', 'authenticators', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def util_setup_verifiers(obj, verifier_uid, accounts, authenticators, tokens):
+
+    verifiers = utilities.setup_verifiers(verifier_uid=verifier_uid,
+                                          accounts=accounts, authenticators=authenticators,
+                                          tokens=tokens,
+                                          ac_server_names=[obj['srv_ac']],
+                                          conf=obj['conf'],
+                                          account_uid=obj['account_uid'],
+                                          client_uid=obj['client_uid'])
+    verfiers = [str(v) for v in verifiers]
+    click.echo("Setup verifiers '{}'".format(verifiers))
+
+@util.command(name='setup_permissions')
+@click.argument('objtype', type=click.STRING)
+@click.argument('objuid', required=False, default=None, type=click.UUID)
+@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--verifier', 'verifiers', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.pass_obj
+def util_setup_permissions(obj, objtype, objuid, tokens, verifiers):
+
+    verifiers = utilities.setup_permissions(objtype, objuid=objuid, tokens=tokens,
+                                            verifiers=verifiers,
+                                            ac_server_names=[obj['srv_ac']],
+                                            conf=obj['conf'],
+                                            account_uid=obj['account_uid'],
+                                            client_uid=obj['client_uid'])
+    verfiers = [str(v) for v in verifiers]
+    if objuid:
+        msg = "Setup permissions for '{} {}'".format(objtype, objuid)
+    else:
+        msg = "Setup permissions for '{}'".format(objtype)
+    msg += " using verifiers '{}'".format(verifiers)
+    click.echo(msg)
+
 @util.command(name='setup_collection')
 @click.option('--col_uid', default=None, type=click.UUID)
-@click.option('--verifier', 'verifiers', default=[], nargs=1,
-              type=click.UUID, multiple=True)
+@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--verifier', 'verifiers', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
-def util_setup_collection(obj, col_uid, verifiers):
+def util_setup_collection(obj, col_uid, tokens, verifiers):
 
-    col_uid, verifiers = utilities.setup_collection(col_uid=col_uid, verifiers=verifiers,
+    col_uid, verifiers = utilities.setup_collection(col_uid=col_uid, tokens=tokens,
+                                                    verifiers=verifiers,
                                                     conf=obj['conf'],
                                                     ac_server_names=[obj['srv_ac']],
                                                     storage_server_names=[obj['srv_storage']],
                                                     account_uid=obj['account_uid'],
                                                     client_uid=obj['client_uid'])
-
     verfiers = [str(v) for v in verifiers]
     click.echo("Setup collection '{}' using verifiers {}".format(col_uid, verifiers))
 
 @util.command(name='store_secret')
 @click.argument('data', type=click.STRING)
-@click.option('--col_uid', default=None, type=click.UUID)
 @click.option('--sec_uid', default=None, type=click.UUID)
+@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--col_uid', default=None, type=click.UUID)
 @click.option('--verifier', 'verifiers', default=[], nargs=1,
               type=click.UUID, multiple=True)
 @click.pass_obj
-def util_store_secret(obj, data, col_uid, sec_uid, verifiers):
+def util_store_secret(obj, data, sec_uid, tokens, col_uid, verifiers):
 
-    sec_uid, col_uid, verifiers = utilities.store_secret(data, sec_uid=sec_uid, col_uid=col_uid,
-                                                         verifiers=verifiers,
+    sec_uid, col_uid, verifiers = utilities.store_secret(data, sec_uid=sec_uid, tokens=tokens,
+                                                         col_uid=col_uid, verifiers=verifiers,
                                                          conf=obj['conf'],
                                                          ac_server_names=[obj['srv_ac']],
                                                          storage_server_names=[obj['srv_storage']],
                                                          account_uid=obj['account_uid'],
                                                          client_uid=obj['client_uid'])
-
     verfiers = [str(v) for v in verifiers]
     msg = "Stored secret '{}' ".format(sec_uid)
     msg += "in collection '{}' ".format(col_uid)
@@ -149,8 +206,8 @@ def util_fetch_secret(obj, col_uid, sec_uid):
                                       storage_server_names=[obj['srv_storage']],
                                       account_uid=obj['account_uid'],
                                       client_uid=obj['client_uid'])
-
     click.echo(sec_data)
+
 
 ### Bootstrap Commands ###
 
@@ -216,7 +273,7 @@ def bootstrap(ctx):
 def authorizations(ctx):
 
     obj = ctx.obj
-    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+    obj['ac_connection'] = accesscontrol.ACServerConnection(server_name=obj['srv_ac'],
                                                             account_uid=obj['account_uid'],
                                                             client_uid=obj['client_uid'],
                                                             conf=obj['conf'])
@@ -224,15 +281,15 @@ def authorizations(ctx):
 
 @authorizations.command(name='request')
 @click.argument('obj_type', type=click.STRING)
-@click.argument('obj_uid', type=click.UUID)
 @click.argument('obj_perm', type=click.STRING)
+@click.argument('obj_uid', required=False, default=None, type=click.UUID)
 @click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
-def authorizations_request(obj, obj_perm, obj_type, obj_uid, userdata):
+def authorizations_request(obj, obj_type, obj_perm, obj_uid, userdata):
 
     with obj['ac_connection']:
-        uid = obj['client_authorizations'].request(obj_type, obj_uid, obj_perm)
-
+        uid = obj['client_authorizations'].request(obj_type, obj_perm,
+                                                   objuid=objuid, userdata=userdata)
     click.echo(uid)
 
 @authorizations.command(name='fetch')
@@ -242,7 +299,6 @@ def authorizations_fetch(obj, uid):
 
     with obj['ac_connection']:
         authz = obj['client_authorizations'].fetch(uid)
-
     click.echo(authz)
 
 @authorizations.command(name='token')
@@ -263,29 +319,24 @@ def authorizations_token(obj, uid):
 def verifiers(ctx):
 
     obj = ctx.obj
-    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+    obj['ac_connection'] = accesscontrol.ACServerConnection(server_name=obj['srv_ac'],
                                                             account_uid=obj['account_uid'],
                                                             client_uid=obj['client_uid'],
                                                             conf=obj['conf'])
     obj['verifiers'] = accesscontrol.VerifiersClient(obj['ac_connection'])
 
 @verifiers.command(name='create')
-@click.option('--uid', default=None,
-              type=click.UUID)
-@click.option('--account', 'accounts', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--authenticator', 'authenticators', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--userdata', default={}, nargs=2,
-              type=click.STRING, multiple=True)
+@click.option('--uid', default=None, type=click.UUID)
+@click.option('--account', 'accounts', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--authenticator', 'authenticators', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def verifiers_create(obj, uid, accounts, authenticators, userdata):
 
     with obj['ac_connection']:
         uid = obj['verifiers'].create(uid=uid, accounts=accounts,
-                                            authenticators=authenticators,
-                                            userdata=userdata)
-
+                                      authenticators=authenticators,
+                                      userdata=userdata)
     click.echo(uid)
 
 @verifiers.command(name='fetch')
@@ -295,7 +346,6 @@ def verifiers_fetch(obj, uid):
 
     with obj['ac_connection']:
         verifiers = obj['verifiers'].fetch(uid)
-
     click.echo(verifiers)
 
 
@@ -306,7 +356,7 @@ def verifiers_fetch(obj, uid):
 def permissions(ctx):
 
     obj = ctx.obj
-    obj['ac_connection'] = accesscontrol.ACServerConnection(ac_server_name=obj['srv_ac'],
+    obj['ac_connection'] = accesscontrol.ACServerConnection(server_name=obj['srv_ac'],
                                                             account_uid=obj['account_uid'],
                                                             client_uid=obj['client_uid'],
                                                             conf=obj['conf'])
@@ -314,22 +364,16 @@ def permissions(ctx):
 
 @permissions.command(name='create')
 @click.argument('objtype', type=click.STRING)
-@click.argument('objuid', default=None, type=click.UUID)
-@click.option('--v_create', 'v_create', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--v_read', 'v_read', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--v_modify', 'v_modify', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--v_delete', 'v_delete', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--v_ac', 'v_ac', default=[], nargs=1,
-              type=click.UUID, multiple=True)
-@click.option('--v_default', 'v_default', default=[], nargs=1,
-              type=click.UUID, multiple=True)
+@click.argument('objuid', required=False, default=None, type=click.UUID)
+@click.option('--v_create', 'v_create', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_read', 'v_read', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_modify', 'v_modify', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_delete', 'v_delete', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_perms', 'v_perms', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_default', 'v_default', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
 def permissions_create(obj, objtype, objuid, v_create, v_read,
-                       v_modify, v_delete, v_ac, v_default):
+                       v_modify, v_delete, v_perms, v_default):
 
     with obj['ac_connection']:
         objtype, objuid = obj['permissions'].create(objtype, objuid=objuid,
@@ -337,14 +381,13 @@ def permissions_create(obj, objtype, objuid, v_create, v_read,
                                                     v_read=v_read,
                                                     v_modify=v_modify,
                                                     v_delete=v_delete,
-                                                    v_ac=v_ac,
+                                                    v_perms=v_perms,
                                                     v_default=v_default)
-
     click.echo("{} {}".format(objtype, objuid))
 
 @permissions.command(name='fetch')
 @click.argument('objtype', type=click.STRING)
-@click.argument('objuid', type=click.UUID)
+@click.argument('objuid', required=False, default=None, type=click.UUID)
 @click.pass_obj
 def permissions_fetch(obj, objtype, objuid):
 
@@ -363,11 +406,11 @@ def collections(ctx):
     obj = ctx.obj
 
     obj['storage_connection'] = storage.StorageServerConnection(
-        storage_server_name=obj['srv_storage'], conf=obj['conf'])
+        server_name=obj['srv_storage'], conf=obj['conf'])
     obj['collections'] = storage.CollectionsClient(obj['storage_connection'])
 
     obj['ac_connection'] = accesscontrol.ACServerConnection(
-        ac_server_name=obj['srv_ac'], conf=obj['conf'],
+        server_name=obj['srv_ac'], conf=obj['conf'],
         account_uid=obj['account_uid'], client_uid=obj['client_uid'])
     obj['authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
 
@@ -412,11 +455,11 @@ def secrets(ctx, col_uid):
     obj['col_uid'] = col_uid
 
     obj['storage_connection'] = storage.StorageServerConnection(
-        storage_server_name=obj['srv_storage'], conf=obj['conf'])
+        server_name=obj['srv_storage'], conf=obj['conf'])
     obj['secrets'] = storage.SecretsClient(obj['storage_connection'])
 
     obj['ac_connection'] = accesscontrol.ACServerConnection(
-        ac_server_name=obj['srv_ac'], conf=obj['conf'],
+        server_name=obj['srv_ac'], conf=obj['conf'],
         account_uid=obj['account_uid'], client_uid=obj['client_uid'])
     obj['authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
 
