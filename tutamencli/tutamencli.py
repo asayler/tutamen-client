@@ -14,6 +14,7 @@ from pytutamen import utilities
 from pytutamen import accesscontrol
 from pytutamen import storage
 
+
 ### Constants ###
 
 _APP_NAME = 'tutamen-cli'
@@ -48,6 +49,7 @@ def cli(ctx, srv_ac, srv_storage, client_uid, account_uid, conf_path):
         client_uid = ctx.obj['conf'].defaults_get_client_uid()
     ctx.obj['client_uid'] = client_uid
 
+
 ### Utility Commands ###
 
 @cli.group(name='util')
@@ -55,44 +57,41 @@ def cli(ctx, srv_ac, srv_storage, client_uid, account_uid, conf_path):
 def util(ctx):
     pass
 
-@util.command(name='setup_ac_server')
+@util.command(name='config_ac_server')
 @click.argument('name', type=click.STRING)
 @click.argument('url', type=click.STRING)
 @click.pass_obj
-def util_setup_ac_server(obj, name, url):
+def util_config_ac_server(obj, name, url):
 
-    utilities.setup_new_ac_server(name, url, conf=obj['conf'])
+    utilities.config_new_ac_server(name, url, conf=obj['conf'])
 
-@util.command(name='setup_storage_server')
+@util.command(name='config_storage_server')
 @click.argument('name', type=click.STRING)
 @click.argument('url', type=click.STRING)
 @click.pass_obj
-def util_setup_storage_server(obj, name, url):
+def util_config_storage_server(obj, name, url):
 
-    utilities.setup_new_storage_server(name, url, conf=obj['conf'])
+    utilities.config_new_storage_server(name, url, conf=obj['conf'])
 
-@util.command(name='setup_account')
-@click.option('--cn', default=None, type=click.STRING)
+@util.command(name='bootstrap_account')
 @click.option('--country', default=None, type=click.STRING)
 @click.option('--state', default=None, type=click.STRING)
 @click.option('--locality', default=None, type=click.STRING)
-@click.option('--organization', default=None, type=click.STRING)
-@click.option('--ou', default=None, type=click.STRING)
 @click.option('--email', default=None, type=click.STRING)
 @click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.option('--client_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
-def util_setup_account(obj, cn, country, state, locality, organization, ou, email,
-                       account_userdata, client_userdata):
+def util_bootstrap_account(obj, country, state, locality, email,
+                           account_userdata, client_userdata):
 
-    ret = utilities.setup_new_account(ac_server_name=obj['srv_ac'],
-                                      cn=cn, country=country, state=state, locality=locality,
-                                      organization=organization, ou=ou, email=email,
-                                      account_userdata=dict(account_userdata),
-                                      account_uid=obj['account_uid'],
-                                      client_userdata=dict(client_userdata),
-                                      client_uid=obj['client_uid'],
-                                      conf=obj['conf'])
+    ret = utilities.bootstrap_new_account(ac_server_name=obj['srv_ac'],
+                                          country=country, state=state, locality=locality,
+                                          email=email,
+                                          account_userdata=dict(account_userdata),
+                                          account_uid=obj['account_uid'],
+                                          client_userdata=dict(client_userdata),
+                                          client_uid=obj['client_uid'],
+                                          conf=obj['conf'])
 
     account_uid, client_uid, client_cert = ret
     click.echo("Account UUID: {}".format(str(account_uid)))
