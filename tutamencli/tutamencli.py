@@ -326,6 +326,7 @@ def verifiers(ctx):
     obj['verifiers'] = accesscontrol.VerifiersClient(obj['ac_connection'])
 
 @verifiers.command(name='create')
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.option('--uid', default=None, type=click.UUID)
 @click.option('--account', 'accounts', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.option('--authenticator', 'authenticators', default=[], nargs=1, type=click.UUID, multiple=True)
@@ -334,18 +335,20 @@ def verifiers(ctx):
 def verifiers_create(obj, uid, accounts, authenticators, userdata):
 
     with obj['ac_connection']:
-        uid = obj['verifiers'].create(uid=uid, accounts=accounts,
+        uid = obj['verifiers'].create(tokens, uid=uid,
+                                      accounts=accounts,
                                       authenticators=authenticators,
                                       userdata=userdata)
     click.echo(uid)
 
 @verifiers.command(name='fetch')
 @click.argument('uid', type=click.UUID)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
-def verifiers_fetch(obj, uid):
+def verifiers_fetch(obj, uid, tokens):
 
     with obj['ac_connection']:
-        verifiers = obj['verifiers'].fetch(uid)
+        verifiers = obj['verifiers'].fetch(tokens, uid)
     click.echo(verifiers)
 
 
@@ -365,6 +368,7 @@ def permissions(ctx):
 @permissions.command(name='create')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.option('--v_create', 'v_create', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.option('--v_read', 'v_read', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.option('--v_modify', 'v_modify', default=[], nargs=1, type=click.UUID, multiple=True)
@@ -372,11 +376,11 @@ def permissions(ctx):
 @click.option('--v_perms', 'v_perms', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.option('--v_default', 'v_default', default=[], nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
-def permissions_create(obj, objtype, objuid, v_create, v_read,
-                       v_modify, v_delete, v_perms, v_default):
+def permissions_create(obj, objtype, objuid, tokens,
+                       v_create, v_read, v_modify, v_delete, v_perms, v_default):
 
     with obj['ac_connection']:
-        objtype, objuid = obj['permissions'].create(objtype, objuid=objuid,
+        objtype, objuid = obj['permissions'].create(tokens, objtype, objuid=objuid,
                                                     v_create=v_create,
                                                     v_read=v_read,
                                                     v_modify=v_modify,
@@ -388,12 +392,12 @@ def permissions_create(obj, objtype, objuid, v_create, v_read,
 @permissions.command(name='fetch')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def permissions_fetch(obj, objtype, objuid):
 
     with obj['ac_connection']:
-        perms = obj['permissions'].fetch(objtype, objuid)
-
+        perms = obj['permissions'].fetch(tokens, objtype, objuid)
     click.echo(perms)
 
 
@@ -415,9 +419,9 @@ def collections(ctx):
     obj['authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
 
 @collections.command(name='create')
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.option('--uid', default=None, type=click.UUID)
 @click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def collections_create(obj, uid, userdata, tokens):
 
@@ -429,8 +433,6 @@ def collections_create(obj, uid, userdata, tokens):
             objperm = obj['collections'].objperm_create
             authz_uid = obj['authorizations'].request(objtype, objuid, objperm)
             authz_token = obj['authorizations'].wait_token(authz_uid)
-        if not authz_token:
-            raise Exception("Authorization denied")
         tokens = [authz_token]
 
     with obj['storage_connection']:
@@ -465,9 +467,9 @@ def secrets(ctx, col_uid):
 
 @secrets.command(name='create')
 @click.argument('data', type=click.STRING)
+@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.option('--uid', default=None, type=click.UUID)
 @click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def secrets_create(obj, data, uid, userdata, tokens):
 
@@ -479,8 +481,6 @@ def secrets_create(obj, data, uid, userdata, tokens):
             objperm = obj['secrets'].objperm_create
             authz_uid = obj['authorizations'].request(objtype, objuid, objperm)
             authz_token = obj['authorizations'].wait_token(authz_uid)
-        if not authz_token:
-            raise Exception("Authorization denied")
         tokens = [authz_token]
 
     with obj['storage_connection']:
@@ -504,8 +504,6 @@ def secrets_fetch(obj, uid, tokens):
             objperm = obj['secrets'].objperm_fetch
             authz_uid = obj['authorizations'].request(objtype, objuid, objperm)
             authz_token = obj['authorizations'].wait_token(authz_uid)
-        if not authz_token:
-            raise Exception("Authorization denied")
         tokens = [authz_token]
 
     with obj['storage_connection']:
