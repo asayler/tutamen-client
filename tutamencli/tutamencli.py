@@ -132,6 +132,24 @@ def util_setup_verifiers(obj, verifier_uid, accounts, authenticators, tokens):
     verfiers = [str(v) for v in verifiers]
     click.echo("Setup verifiers '{}'".format(verifiers))
 
+@util.command(name='fetch_verifiers')
+@click.argument('verifier_uid', type=click.UUID)
+@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def util_fetch_verifiers(obj, verifier_uid, tokens):
+
+    verifiers, errors = utilities.fetch_verifiers(verifier_uid,
+                                                  tokens=tokens,
+                                                  ac_server_names=[obj['srv_ac']],
+                                                  conf=obj['conf'],
+                                                  account_uid=obj['account_uid'],
+                                                  client_uid=obj['client_uid'])
+    for srv, error in errors.items():
+        click.echo("{}: {}".format(srv, errors))
+
+    for srv, verifier in verifiers.items():
+        click.echo("{}: {}".format(srv, verifier))
+
 @util.command(name='setup_permissions')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
@@ -153,6 +171,25 @@ def util_setup_permissions(obj, objtype, objuid, tokens, verifiers):
         msg = "Setup permissions for '{}'".format(objtype)
     msg += " using verifiers '{}'".format(verifiers)
     click.echo(msg)
+
+@util.command(name='fetch_permissions')
+@click.argument('objtype', type=click.STRING)
+@click.argument('objuid', required=False, default=None, type=click.UUID)
+@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def util_fetch_permissions(obj, objtype, objuid, tokens):
+
+    spermissions, errors = utilities.fetch_permissions(objtype, objuid=objuid, tokens=tokens,
+                                                       ac_server_names=[obj['srv_ac']],
+                                                       conf=obj['conf'],
+                                                       account_uid=obj['account_uid'],
+                                                       client_uid=obj['client_uid'])
+
+    for srv, error in errors.items():
+        click.echo("{}: {}".format(srv, errors))
+
+    for srv, permissions in spermissions.items():
+        click.echo("{}: {}".format(srv, permissions))
 
 @util.command(name='setup_collection')
 @click.option('--col_uid', default=None, type=click.UUID)
