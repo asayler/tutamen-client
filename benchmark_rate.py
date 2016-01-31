@@ -37,7 +37,7 @@ def get_ss_secret(token, col_uid, sec_uid):
     url = "https://ss.tutamen-test.bdr1.volaticus.net/api/v1/"
     url += "/collections/" + str(col_uid)
     url += "/secrets/" + str(sec_uid)
-    url += "/verisons/latest/"
+    url += "/versions/latest/"
 
     header = {'tutamen-tokens': token}
     res = requests.get(url=url, headers=header)
@@ -162,8 +162,16 @@ if __name__ == "__main__":
                   get_ac_auth, path_crt, path_key, "create", "storageserver")
 
     elif test == "get_ss_secret":
-        # Todo
-        pass
+        
+        col_uid = uuid.UUID(sys.argv[8])
+        sec_uid = uuid.UUID(sys.argv[9])
+
+        auth_uid = get_ac_auth(path_crt, path_key,
+                               "read", "collection", col_uid)
+        token = get_ac_token(path_crt, path_key, auth_uid)
+
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ss_secret, token, col_uid, sec_uid)
 
     else:
         print("Unrecognized test case")
