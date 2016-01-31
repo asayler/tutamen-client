@@ -9,7 +9,7 @@ import requests
 import sys
 from concurrent import futures
 
-def get_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
+def get_ac_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
 
     url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/authorizations/"
 
@@ -22,7 +22,7 @@ def get_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
     uid = res.json()['authorizations'][0]
     return uid
 
-def get_token(path_crt, path_key, uid):
+def get_ac_token(path_crt, path_key, uid):
 
     url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/authorizations/"
     url += str(uid) + "/"
@@ -32,7 +32,7 @@ def get_token(path_crt, path_key, uid):
     authz = res.json()
     return authz['token']
 
-def get_secret(token, col_uid, sec_uid):
+def get_ss_secret(token, col_uid, sec_uid):
 
     url = "https://ss.tutamen-test.bdr1.volaticus.net/api/v1/"
     url += "/collections/" + str(col_uid)
@@ -99,7 +99,7 @@ def min_time(sec):
 
 def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwargs):
 
-    min_t = 1 #second
+    min_t = 2 #second
 
     @res_time()
     def bm_function(*bm_args, **bm_kwargs):
@@ -142,6 +142,28 @@ if __name__ == "__main__":
     iops_end = int(sys.argv[4])
     iops_step = int(sys.argv[5])
     duration = int(sys.argv[6])
+    test = sys.argv[7]
 
-    benchmark(iops_start, iops_end, iops_step, duration,
-              get_ac_null_cert, path_crt, path_key)
+
+    if test == "get_ss_null":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ss_null)
+
+    elif test == "get_ac_null":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ac_null)
+
+    elif test == "get_ac_null_cert":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ac_null_cert, path_crt, path_key)
+
+    elif test == "get_ac_auth":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ac_auth, path_crt, path_key, "create", "storageserver")
+
+    elif test == "get_ss_secret":
+        # Todo
+        pass
+
+    else:
+        print("Unrecognized test case")
