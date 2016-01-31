@@ -9,6 +9,8 @@ import requests
 import sys
 from concurrent import futures
 
+MIN_T = 2
+
 def get_ac_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
 
     url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/authorizations/"
@@ -97,9 +99,29 @@ def min_time(sec):
 
     return _decorator
 
-def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwargs):
+def target_iops(iops_target, duration, bm_function, *args, **kwargs):
 
-    min_t = 2 #second
+    threads = iops_target * MIN_T
+    cnt = iops_target * duration
+    pause = 1.0 / iops_target
+
+    futrs = []
+    times = []
+    start = time.time()
+    with futures.ThreadPoolExecutor(max_workers=threads) as e:
+        for i in range(0, cnt):
+            run_t_actual = time.time() - start
+            run_t_target = i * pause
+            if run_t_actual < run_t_target:
+                time.sleep(run_t_target - run_t_actual)
+            futrs.append(e.submit(bm_function, *args, **kwargs))
+        for f in futrs:
+            times.append(f.result())
+
+    tot = time.time() - start
+    return tot, times
+
+def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwargs):
 
     @res_time()
     def bm_function(*bm_args, **bm_kwargs):
@@ -109,26 +131,15 @@ def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwar
         except Exception as error:
             print(error)
 
+    #Precook
+    print("Precooking...")
+    target_iops(iops_start, duration, bm_function, *args, **kwargs)
+
+    print("Benchmarking...")
     for iops_target in range(iops_start, iops_end, iops_step):
 
-        threads = iops_target * min_t
-        cnt = iops_target * duration
-        pause = 1.0 / iops_target
-
-        futrs = []
-        times = []
-        start = time.time()
-        with futures.ThreadPoolExecutor(max_workers=threads) as e:
-            for i in range(0, cnt):
-                run_t_actual = time.time() - start
-                run_t_target = i * pause
-                if run_t_actual < run_t_target:
-                    time.sleep(run_t_target - run_t_actual)
-                futrs.append(e.submit(bm_function, *args, **kwargs))
-            for f in futrs:
-                times.append(f.result())
-
-        tot = time.time() - start
+        tot, times = target_iops(iops_target, duration, bm_function, *args, **kwargs)
+        cnt = len(times)
         iops = (float(cnt) / float(tot))
         avg = statistics.mean(times)
         std = statistics.pstdev(times)
