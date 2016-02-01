@@ -59,9 +59,33 @@ def get_ac_null():
     res = requests.get(url=url)
     res.raise_for_status()
 
+def get_ac_https():
+
+    url = "https://ac.tutamen-test.bdr1.volaticus.net/"
+    res = requests.get(url=url)
+    res.raise_for_status()
+
+def get_ac_http():
+
+    url = "http://ac.tutamen-test.bdr1.volaticus.net/"
+    res = requests.get(url=url)
+    res.raise_for_status()
+
 def get_ss_null():
 
     url = "https://ss.tutamen-test.bdr1.volaticus.net/api/v1/"
+    res = requests.get(url=url)
+    res.raise_for_status()
+
+def get_ss_https():
+
+    url = "https://ss.tutamen-test.bdr1.volaticus.net/"
+    res = requests.get(url=url)
+    res.raise_for_status()
+
+def get_ss_http():
+
+    url = "http://ss.tutamen-test.bdr1.volaticus.net/"
     res = requests.get(url=url)
     res.raise_for_status()
 
@@ -168,12 +192,28 @@ if __name__ == "__main__":
         benchmark(iops_start, iops_end, iops_step, duration,
                   get_ac_null_cert, path_crt, path_key)
 
+    elif test == "get_ac_https":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ac_https)
+
+    elif test == "get_ss_https":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ss_https)
+
+    elif test == "get_ac_http":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ac_http)
+
+    elif test == "get_ss_http":
+        benchmark(iops_start, iops_end, iops_step, duration,
+                  get_ss_http)
+
     elif test == "get_ac_auth":
         benchmark(iops_start, iops_end, iops_step, duration,
                   get_ac_auth, path_crt, path_key, "create", "storageserver")
 
     elif test == "get_ss_secret":
-        
+
         col_uid = uuid.UUID(sys.argv[8])
         sec_uid = uuid.UUID(sys.argv[9])
 
