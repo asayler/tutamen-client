@@ -3,3 +3,7 @@
 
 # Python Cruft
 *.pyc
+
+# Other Cruft
+*.pem
+fetch_secret
