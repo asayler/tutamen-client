@@ -9,7 +9,7 @@ import requests
 import sys
 from concurrent import futures
 
-MIN_T = 2
+MIN_T = 1.0
 
 def get_ac_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
 
