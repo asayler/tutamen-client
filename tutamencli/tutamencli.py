@@ -78,12 +78,14 @@ def util_config_storage_server(obj, name, url):
 @click.option('--state', default=None, type=click.STRING)
 @click.option('--locality', default=None, type=click.STRING)
 @click.option('--email', default=None, type=click.STRING)
-@click.option('--account_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
-@click.option('--client_userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--account_userdata', nargs=2, type=click.STRING, multiple=True)
+@click.option('--client_userdata', nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def util_bootstrap_account(obj, country, state, locality, email,
                            account_userdata, client_userdata):
 
+    account_userdata = dict(list(account_userdata))
+    client_userdata = dict(list(client_userdata))
     ret = utilities.bootstrap_new_account(ac_server_name=obj['srv_ac'],
                                           country=country, state=state, locality=locality,
                                           email=email,
@@ -116,12 +118,14 @@ def util_get_tokens(obj, objtype, objperm, objuid):
 
 @util.command(name='setup_verifiers')
 @click.option('--verifier_uid', default=None, type=click.UUID)
-@click.option('--account', 'accounts', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--account', 'accounts', nargs=1, type=click.UUID, multiple=True)
 @click.option('--authenticator', 'authenticators', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def util_setup_verifiers(obj, verifier_uid, accounts, authenticators, tokens):
 
+    accounts = list(accounts)
+    tokens = list(tokens)
     verifiers = utilities.setup_verifiers(verifier_uid=verifier_uid,
                                           accounts=accounts, authenticators=authenticators,
                                           tokens=tokens,
@@ -134,10 +138,11 @@ def util_setup_verifiers(obj, verifier_uid, accounts, authenticators, tokens):
 
 @util.command(name='fetch_verifiers')
 @click.argument('verifier_uid', type=click.UUID)
-@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def util_fetch_verifiers(obj, verifier_uid, tokens):
 
+    tokens = list(tokens)
     verifiers, errors = utilities.fetch_verifiers(verifier_uid,
                                                   tokens=tokens,
                                                   ac_server_names=[obj['srv_ac']],
@@ -153,11 +158,13 @@ def util_fetch_verifiers(obj, verifier_uid, tokens):
 @util.command(name='setup_permissions')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
-@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
-@click.option('--verifier', 'verifiers', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.option('--verifier', 'verifiers', nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
 def util_setup_permissions(obj, objtype, objuid, tokens, verifiers):
 
+    tokens = list(tokens)
+    verifiers = list(verifiers)
     verifiers = utilities.setup_permissions(objtype, objuid=objuid, tokens=tokens,
                                             verifiers=verifiers,
                                             ac_server_names=[obj['srv_ac']],
@@ -175,10 +182,11 @@ def util_setup_permissions(obj, objtype, objuid, tokens, verifiers):
 @util.command(name='fetch_permissions')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
-@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def util_fetch_permissions(obj, objtype, objuid, tokens):
 
+    tokens = list(tokens)
     spermissions, errors = utilities.fetch_permissions(objtype, objuid=objuid, tokens=tokens,
                                                        ac_server_names=[obj['srv_ac']],
                                                        conf=obj['conf'],
@@ -193,11 +201,13 @@ def util_fetch_permissions(obj, objtype, objuid, tokens):
 
 @util.command(name='setup_collection')
 @click.option('--col_uid', default=None, type=click.UUID)
-@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
-@click.option('--verifier', 'verifiers', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.option('--verifier', 'verifiers', nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
 def util_setup_collection(obj, col_uid, tokens, verifiers):
 
+    tokens = list(tokens)
+    verifiers = list(verifiers)
     col_uid, verifiers = utilities.setup_collection(col_uid=col_uid, tokens=tokens,
                                                     verifiers=verifiers,
                                                     conf=obj['conf'],
@@ -211,13 +221,15 @@ def util_setup_collection(obj, col_uid, tokens, verifiers):
 @util.command(name='store_secret')
 @click.argument('data', type=click.STRING)
 @click.option('--sec_uid', default=None, type=click.UUID)
-@click.option('--token', 'tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.option('--col_uid', default=None, type=click.UUID)
-@click.option('--verifier', 'verifiers', default=[], nargs=1,
+@click.option('--verifier', 'verifiers', nargs=1,
               type=click.UUID, multiple=True)
 @click.pass_obj
 def util_store_secret(obj, data, sec_uid, tokens, col_uid, verifiers):
 
+    tokens = list(tokens)
+    verifiers = list(verifiers)
     sec_uid, col_uid, verifiers = utilities.store_secret(data, sec_uid=sec_uid, tokens=tokens,
                                                          col_uid=col_uid, verifiers=verifiers,
                                                          conf=obj['conf'],
@@ -320,13 +332,14 @@ def authorizations(ctx):
 @click.argument('obj_type', type=click.STRING)
 @click.argument('obj_perm', type=click.STRING)
 @click.argument('obj_uid', required=False, default=None, type=click.UUID)
-@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--userdata', nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def authorizations_request(obj, obj_type, obj_perm, obj_uid, userdata):
 
+    userdata = dict(list(userdata))
     with obj['ac_connection']:
         uid = obj['client_authorizations'].request(obj_type, obj_perm,
-                                                   objuid=objuid, userdata=userdata)
+                                                   obj_uid=obj_uid, userdata=userdata)
     click.echo(uid)
 
 @authorizations.command(name='fetch')
@@ -363,14 +376,18 @@ def verifiers(ctx):
     obj['verifiers'] = accesscontrol.VerifiersClient(obj['ac_connection'])
 
 @verifiers.command(name='create')
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.option('--uid', default=None, type=click.UUID)
-@click.option('--account', 'accounts', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--authenticator', 'authenticators', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--account', 'accounts', nargs=1, type=click.UUID, multiple=True)
+@click.option('--authenticator', 'authenticators', nargs=1, type=click.UUID, multiple=True)
+@click.option('--userdata', nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
-def verifiers_create(obj, uid, accounts, authenticators, userdata):
+def verifiers_create(obj, tokens, uid, accounts, authenticators, userdata):
 
+    tokens = list(tokens)
+    accounts = list(accounts)
+    authenticators = list(authenticators)
+    userdata = dict(list(userdata))
     with obj['ac_connection']:
         uid = obj['verifiers'].create(tokens, uid=uid,
                                       accounts=accounts,
@@ -380,10 +397,11 @@ def verifiers_create(obj, uid, accounts, authenticators, userdata):
 
 @verifiers.command(name='fetch')
 @click.argument('uid', type=click.UUID)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def verifiers_fetch(obj, uid, tokens):
 
+    tokens = list(tokens)
     with obj['ac_connection']:
         verifiers = obj['verifiers'].fetch(tokens, uid)
     click.echo(verifiers)
@@ -405,17 +423,24 @@ def permissions(ctx):
 @permissions.command(name='create')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
-@click.option('--v_create', 'v_create', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--v_read', 'v_read', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--v_modify', 'v_modify', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--v_delete', 'v_delete', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--v_perms', 'v_perms', default=[], nargs=1, type=click.UUID, multiple=True)
-@click.option('--v_default', 'v_default', default=[], nargs=1, type=click.UUID, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.option('--v_create', 'v_create', nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_read', 'v_read', nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_modify', 'v_modify', nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_delete', 'v_delete', nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_perms', 'v_perms', nargs=1, type=click.UUID, multiple=True)
+@click.option('--v_default', 'v_default', nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
 def permissions_create(obj, objtype, objuid, tokens,
                        v_create, v_read, v_modify, v_delete, v_perms, v_default):
 
+    tokens = list(tokens)
+    v_create = list(v_create)
+    v_read = list(v_read)
+    v_modify = list(v_modify)
+    v_delete = list(v_delete)
+    v_perms = list(v_perms)
+    v_default = list(v_defaults)
     with obj['ac_connection']:
         objtype, objuid = obj['permissions'].create(tokens, objtype, objuid=objuid,
                                                     v_create=v_create,
@@ -429,10 +454,11 @@ def permissions_create(obj, objtype, objuid, tokens,
 @permissions.command(name='fetch')
 @click.argument('objtype', type=click.STRING)
 @click.argument('objuid', required=False, default=None, type=click.UUID)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def permissions_fetch(obj, objtype, objuid):
 
+    tokens = list(tokens)
     with obj['ac_connection']:
         perms = obj['permissions'].fetch(tokens, objtype, objuid)
     click.echo(perms)
@@ -456,13 +482,14 @@ def collections(ctx):
     obj['authorizations'] = accesscontrol.AuthorizationsClient(obj['ac_connection'])
 
 @collections.command(name='create')
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.option('--uid', default=None, type=click.UUID)
-@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--userdata', nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def collections_create(obj, uid, userdata, tokens):
 
     tokens = list(tokens)
+    userdata = dict(list(userdata))
     if not tokens:
         with obj['ac_connection']:
             objtype = obj['collections'].objtype
@@ -504,13 +531,14 @@ def secrets(ctx, col_uid):
 
 @secrets.command(name='create')
 @click.argument('data', type=click.STRING)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.option('--uid', default=None, type=click.UUID)
-@click.option('--userdata', default={}, nargs=2, type=click.STRING, multiple=True)
+@click.option('--userdata', nargs=2, type=click.STRING, multiple=True)
 @click.pass_obj
 def secrets_create(obj, data, uid, userdata, tokens):
 
     tokens = list(tokens)
+    userdata = dict(list(userdata))
     if not tokens:
         with obj['ac_connection']:
             objtype = obj['secrets'].objtype
@@ -529,7 +557,7 @@ def secrets_create(obj, data, uid, userdata, tokens):
 
 @secrets.command(name='fetch')
 @click.argument('uid', type=click.UUID)
-@click.option('--tokens', default=[], nargs=1, type=click.STRING, multiple=True)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.pass_obj
 def secrets_fetch(obj, uid, tokens):
 
