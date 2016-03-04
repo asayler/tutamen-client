@@ -361,6 +361,48 @@ def authorizations_token(obj, uid):
 
     click.echo(token)
 
+### Authenticators Commands ###
+
+@cli.group(name='authenticators')
+@click.pass_context
+def authenticators(ctx):
+
+    obj = ctx.obj
+    obj['ac_connection'] = accesscontrol.ACServerConnection(server_name=obj['srv_ac'],
+                                                            account_uid=obj['account_uid'],
+                                                            client_uid=obj['client_uid'],
+                                                            conf=obj['conf'])
+    obj['authenticators'] = accesscontrol.AuthenticatorsClient(obj['ac_connection'])
+
+@authenticators.command(name='create')
+@click.argument('module_name', type=click.STRING)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.option('--module_arg', 'module_kwargs', nargs=2, type=click.STRING, multiple=True)
+@click.option('--uid', default=None, type=click.UUID)
+@click.option('--userdata', nargs=2, type=click.STRING, multiple=True)
+@click.pass_obj
+def authenticators_create(obj, module_name, module_kwargs, tokens, uid, userdata):
+
+    tokens = list(tokens)
+    module_kwargs = dict(list(module_kwargs))
+    userdata = dict(list(userdata))
+    with obj['ac_connection']:
+        uid = obj['authenticators'].create(tokens, module_name,
+                                           module_kwargs=module_kwargs,
+                                           uid=uid, userdata=userdata)
+    click.echo(uid)
+
+@authenticators.command(name='fetch')
+@click.argument('uid', type=click.UUID)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def authenticators_fetch(obj, uid, tokens):
+
+    tokens = list(tokens)
+    with obj['ac_connection']:
+        authenticator = obj['authenticators'].fetch(tokens, uid)
+    click.echo(authenticator)
+
 
 ### Verifiers Commands ###
 
