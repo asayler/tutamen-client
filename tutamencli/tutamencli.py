@@ -116,6 +116,47 @@ def util_get_tokens(obj, objtype, objperm, objuid):
     if errors:
         click.echo("Got errors '{}'".format(errors))
 
+@util.command(name='setup_authenticators')
+@click.argument('module_name', type=click.STRING)
+@click.option('--module_arg', 'module_kwargs', nargs=2, type=click.STRING, multiple=True)
+@click.option('--authn_uid', default=None, type=click.UUID)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.option('--verifier', 'verifiers', nargs=1, type=click.UUID, multiple=True)
+@click.pass_obj
+def util_setup_authenticators(obj, module_name, module_kwargs, authn_uid, tokens, verifiers):
+
+    tokens = list(tokens)
+    verifiers = list(verifiers)
+    module_kwargs = dict(list(module_kwargs))
+    authenticators = utilities.setup_authenticators(module_name, module_kwargs=module_kwargs,
+                                                    authn_uid=authn_uid, tokens=tokens,
+                                                    verifiers=verifiers,
+                                                    ac_server_names=[obj['srv_ac']],
+                                                    conf=obj['conf'],
+                                                    account_uid=obj['account_uid'],
+                                                    client_uid=obj['client_uid'])
+    authenticators = [str(v) for v in authenticators]
+    click.echo("Setup authenticators '{}'".format(authenticators))
+
+@util.command(name='fetch_authenticators')
+@click.argument('authn_uid', type=click.UUID)
+@click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
+@click.pass_obj
+def util_fetch_authenticators(obj, authn_uid, tokens):
+
+    tokens = list(tokens)
+    authenticators, errors = utilities.fetch_authenticators(authn_uid,
+                                                            tokens=tokens,
+                                                            ac_server_names=[obj['srv_ac']],
+                                                            conf=obj['conf'],
+                                                            account_uid=obj['account_uid'],
+                                                            client_uid=obj['client_uid'])
+    for srv, error in errors.items():
+        click.echo("{}: {}".format(srv, errors))
+
+    for srv, authn in authenticators.items():
+        click.echo("{}: {}".format(srv, authn))
+
 @util.command(name='setup_verifiers')
 @click.option('--verifier_uid', default=None, type=click.UUID)
 @click.option('--account', 'accounts', nargs=1, type=click.UUID, multiple=True)
