@@ -119,18 +119,22 @@ def util_get_tokens(obj, objtype, objperm, objuid):
 @util.command(name='setup_authenticators')
 @click.argument('module_name', type=click.STRING)
 @click.option('--module_arg', 'module_kwargs', nargs=2, type=click.STRING, multiple=True)
+@click.option('--authn_userdata', nargs=2, type=click.STRING, multiple=True)
 @click.option('--authn_uid', default=None, type=click.UUID)
 @click.option('--token', 'tokens', nargs=1, type=click.STRING, multiple=True)
 @click.option('--verifier', 'verifiers', nargs=1, type=click.UUID, multiple=True)
 @click.pass_obj
-def util_setup_authenticators(obj, module_name, module_kwargs, authn_uid, tokens, verifiers):
+def util_setup_authenticators(obj, module_name, module_kwargs,
+                              authn_userdata, authn_uid, tokens, verifiers):
 
     tokens = list(tokens)
     verifiers = list(verifiers)
     module_kwargs = dict(list(module_kwargs))
+    authn_userdata = dict(list(authn_userdata))
     authenticators = utilities.setup_authenticators(module_name, module_kwargs=module_kwargs,
-                                                    authn_uid=authn_uid, tokens=tokens,
-                                                    verifiers=verifiers,
+                                                    authn_userdata=authn_userdata,
+                                                    authn_uid=authn_uid,
+                                                    tokens=tokens, verifiers=verifiers,
                                                     ac_server_names=[obj['srv_ac']],
                                                     conf=obj['conf'],
                                                     account_uid=obj['account_uid'],
