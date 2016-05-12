@@ -23,25 +23,29 @@ _APP_NAME = 'tutamen-cli'
 ### CLI Root ###
 
 @click.group()
-@click.option('--srv_ac', default=None, help="Access Control Server Config Name")
-@click.option('--srv_storage', default=None, help="Storage Server Config Name")
+@click.option('--acs', '--srv_ac', 'ac_srvs', multiple=True, help="Access Control Server Config Name")
+@click.option('--ss', '--srv_storage', 'ss_srvs', multiple=True, help="Storage Server Config Name")
 @click.option('--account_uid', default=None, type=click.UUID)
 @click.option('--client_uid', default=None, type=click.UUID)
 @click.option('--conf_path', default=None, help="Tutamen Client Config Directory",
               type=click.Path(resolve_path=True))
 @click.pass_context
-def cli(ctx, srv_ac, srv_storage, client_uid, account_uid, conf_path):
+def cli(ctx, ac_srvs, ss_srvs, client_uid, account_uid, conf_path):
     """COG CLI"""
+
+    # Parse Input
+    ac_srvs = list(ac_srvs)
+    ss_srvs = list(ss_srvs)
 
     # Setup Context
     ctx.obj = {}
     ctx.obj['conf'] = config.ClientConfig(conf_path=conf_path)
-    if not srv_ac:
-        srv_ac = ctx.obj['conf'].defaults_get_ac_server()
-    ctx.obj['srv_ac'] = srv_ac
-    if not srv_storage:
-        srv_storage = ctx.obj['conf'].defaults_get_storage_server()
-    ctx.obj['srv_storage'] = srv_storage
+    if not ac_srvs:
+        ac_srvs = ctx.obj['conf'].defaults_get_ac_servers()
+    ctx.obj['ac_srvs'] = ac_srvs
+    if not ss_srvs:
+        ss_srvs = ctx.obj['conf'].defaults_get_storage_servers()
+    ctx.obj['ss_srvs'] = ss_srvs
     if not account_uid:
         account_uid = ctx.obj['conf'].defaults_get_account_uid()
     ctx.obj['account_uid'] = account_uid
@@ -278,8 +282,8 @@ def util_store_secret(obj, data, sec_uid, tokens, col_uid, verifiers):
     sec_uid, col_uid, verifiers = utilities.store_secret(data, sec_uid=sec_uid, tokens=tokens,
                                                          col_uid=col_uid, verifiers=verifiers,
                                                          conf=obj['conf'],
-                                                         ac_server_names=[obj['srv_ac']],
-                                                         storage_server_names=[obj['srv_storage']],
+                                                         ac_server_names=obj['ac_srvs'],
+                                                         storage_server_names=obj['ss_srvs'],
                                                          account_uid=obj['account_uid'],
                                                          client_uid=obj['client_uid'])
     verfiers = [str(v) for v in verifiers]
@@ -296,8 +300,8 @@ def util_fetch_secret(obj, col_uid, sec_uid):
 
     sec_data = utilities.fetch_secret(sec_uid, col_uid,
                                       conf=obj['conf'],
-                                      ac_server_names=[obj['srv_ac']],
-                                      storage_server_names=[obj['srv_storage']],
+                                      ac_server_names=obj['ac_srvs'],
+                                      storage_server_names=obj['ss_srvs'],
                                       account_uid=obj['account_uid'],
                                       client_uid=obj['client_uid'])
     click.echo(sec_data)
