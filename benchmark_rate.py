@@ -106,24 +106,6 @@ def res_time():
 
     return _decorator
 
-def min_time(sec):
-
-    def _decorator(func):
-
-        @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
-
-            start = time.time()
-            ret = func(*args, **kwargs)
-            dur = time.time() - start
-            if dur < sec:
-                time.sleep(sec-dur)
-            return ret
-
-        return _wrapper
-
-    return _decorator
-
 def target_iops(iops_target, duration, bm_function, *args, **kwargs):
 
     threads = iops_target * MIN_T
