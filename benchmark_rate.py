@@ -10,10 +10,15 @@ import sys
 from concurrent import futures
 
 MIN_T = 1.0
+BASE_URI = "tutamen.vrg1.aws.volaticus.net"
+ACS_URI = "acs." + BASE_URI
+SS_URI = "ss." + BASE_URI
 
+# Note: This relies on synchronous 'authorizations post' behavior
+# If 'authorizations post' is asynchronous, this needs to wait for completion
 def get_ac_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
 
-    url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/authorizations/"
+    url = "https://" + ACS_URI + "/api/v1/authorizations/"
 
     json = {'objperm': obj_perm,
             'objtype': obj_type,
@@ -26,8 +31,7 @@ def get_ac_auth(path_crt, path_key, obj_perm, obj_type, obj_uid=None):
 
 def get_ac_token(path_crt, path_key, uid):
 
-    url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/authorizations/"
-    url += str(uid) + "/"
+    url = "https://" + ACS_URI + "/api/v1/authorizations/" + str(uid) + "/"
 
     res = requests.get(url=url, cert=(path_crt, path_key))
     res.raise_for_status()
@@ -36,10 +40,7 @@ def get_ac_token(path_crt, path_key, uid):
 
 def get_ss_secret(token, col_uid, sec_uid):
 
-    url = "https://ss.tutamen-test.bdr1.volaticus.net/api/v1/"
-    url += "/collections/" + str(col_uid)
-    url += "/secrets/" + str(sec_uid)
-    url += "/versions/latest/"
+    url = "https://" + SS_URI + "/api/v1/collections" + str(col_uid) + "/secrets/" + str(sec_uid) + "/versions/latest/"
 
     header = {'tutamen-tokens': token}
     res = requests.get(url=url, headers=header)
@@ -49,43 +50,43 @@ def get_ss_secret(token, col_uid, sec_uid):
 
 def get_ac_null_cert(path_crt, path_key):
 
-    url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/"
+    url = "https://" + ACS_URI + "/api/v1/"
     res = requests.get(url=url, cert=(path_crt, path_key))
     res.raise_for_status()
 
 def get_ac_null():
 
-    url = "https://ac.tutamen-test.bdr1.volaticus.net/api/v1/"
+    url = "https://" + ACS_URI + "/api/v1/"
     res = requests.get(url=url)
     res.raise_for_status()
 
 def get_ac_https():
 
-    url = "https://ac.tutamen-test.bdr1.volaticus.net/"
+    url = "https://" + ACS_URI + "/"
     res = requests.get(url=url)
     res.raise_for_status()
 
 def get_ac_http():
 
-    url = "http://ac.tutamen-test.bdr1.volaticus.net/"
+    url = "https://" + ACS_URI + "/"
     res = requests.get(url=url)
     res.raise_for_status()
 
 def get_ss_null():
 
-    url = "https://ss.tutamen-test.bdr1.volaticus.net/api/v1/"
+    url = "https://" + SS_URI + "/api/v1/"
     res = requests.get(url=url)
     res.raise_for_status()
 
 def get_ss_https():
 
-    url = "https://ss.tutamen-test.bdr1.volaticus.net/"
+    url = "https://" + SS_URI + "/"
     res = requests.get(url=url)
     res.raise_for_status()
 
 def get_ss_http():
 
-    url = "http://ss.tutamen-test.bdr1.volaticus.net/"
+    url = "http://" + SS_URI + "/"
     res = requests.get(url=url)
     res.raise_for_status()
 
@@ -178,7 +179,6 @@ if __name__ == "__main__":
     iops_step = int(sys.argv[5])
     duration = int(sys.argv[6])
     test = sys.argv[7]
-
 
     if test == "get_ss_null":
         benchmark(iops_start, iops_end, iops_step, duration,
