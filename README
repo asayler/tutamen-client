@@ -1,3 +1,27 @@
 Tutamen Secret Server CLI
 Andy Sayler
-Copyright 2015
+Copyright 2015, 2016
+
+Usage
+-----
+
+# Set path
+$ export PYTHONPATH=$(pwd)
+
+# Setup Test AC Server
+$ ./tutamencli/tutamencli.py util config_ac_server <name> <URI>
+
+# Setup Test Storage Server
+$ ./tutamencli/tutamencli.py util config_storage_server <name> <URI>
+
+# Create an account and client
+$ ./tutamencli/tutamencli.py util bootstrap_account
+
+# Store a Secret
+$ ./tutamencli/tutamencli.py util store_secret "My Very First Test Secret"
+
+# Fetch the Secret
+$ ./tutamencli/tutamencli.py util fetch_secret <col_uid> <sec_uid>
+
+# See other commands:
+$ ./tutamencli/tutamencli.py util --help
