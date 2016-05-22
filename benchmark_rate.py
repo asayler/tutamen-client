@@ -143,6 +143,7 @@ def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwar
     target_iops(iops_start, duration, bm_function, *args, **kwargs)
 
     print("Benchmarking...")
+    print(" cnt | total |  iops  | latavg | latstd ")
     for iops_target in range(iops_start, iops_end, iops_step):
 
         tot, times = target_iops(iops_target, duration, bm_function, *args, **kwargs)
@@ -150,7 +151,7 @@ def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwar
         iops = (float(cnt) / float(tot))
         avg = statistics.mean(times)
         std = statistics.pstdev(times)
-        print("{}, {:.1f}, {:.1f}, {:.3f}, {:.3f}".format(cnt, tot, iops, avg, std))
+        print("{:4d} | {:5.1f} | {:6.1f} | {:6.3f} | {:5.3f}".format(cnt, tot, iops, avg, std))
 
 if __name__ == "__main__":
 
