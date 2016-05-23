@@ -10,7 +10,7 @@ import sys
 from concurrent import futures
 
 MAX_DELAY = 1.0 #Seconds
-BATCH_SIZE = 10 #Threads
+BATCH_DIV = 10
 BASE_URI = "tutamen.vrg1.aws.volaticus.net"
 ACS_URI = "acs." + BASE_URI
 SS_URI = "ss." + BASE_URI
@@ -116,9 +116,10 @@ def target_iops(iops_target, cnt, function, *args, **kwargs):
         except Exception as error:
             print(error)
 
+    batch_size = int(cnt // BATCH_DIV)
     threads = int(iops_target * MAX_DELAY)
-    pause = float(BATCH_SIZE) / float(iops_target)
-    rounds = int(cnt // BATCH_SIZE)
+    pause = float(batch_size) / float(iops_target)
+    rounds = int(cnt // batch_size)
 
     futrs = []
     times = []
@@ -128,7 +129,7 @@ def target_iops(iops_target, cnt, function, *args, **kwargs):
 
         rnd = 0
         while True:
-            for k in range(0, BATCH_SIZE):
+            for k in range(0, batch_size):
                 futrs.append(e.submit(timed_function, *args, **kwargs))
             rnd += 1
             run_t_actual = time.time() - start
