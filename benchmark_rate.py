@@ -40,7 +40,7 @@ def get_ac_token(path_crt, path_key, uid):
 
 def get_ss_secret(token, col_uid, sec_uid):
 
-    url = "https://" + SS_URI + "/api/v1/collections" + str(col_uid) + "/secrets/" + str(sec_uid) + "/versions/latest/"
+    url = "https://" + SS_URI + "/api/v1/collections/" + str(col_uid) + "/secrets/" + str(sec_uid) + "/versions/latest/"
 
     header = {'tutamen-tokens': token}
     res = requests.get(url=url, headers=header)
@@ -68,7 +68,7 @@ def get_ac_https():
 
 def get_ac_http():
 
-    url = "https://" + ACS_URI + "/"
+    url = "http://" + ACS_URI + "/"
     res = requests.get(url=url)
     res.raise_for_status()
 
