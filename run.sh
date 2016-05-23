@@ -14,7 +14,7 @@ SEC="b80b481b-39cd-4bda-bf36-cbff8c631234"
 
 echo "get_ac_auth"
 ./benchmark_rate.py "${CRT}" "${KEY}" 10 91 10 100 get_ac_auth | tee "${HOME}/${NAME}_get_ac_auth.ssv"
-./benchmark_rate.py "${CRT}" "${KEY}" 100 191 10 200 get_ac_auth | tee "${HOME}/${NAME}_get_ac_auth.ssv"
+./benchmark_rate.py "${CRT}" "${KEY}" 100 191 10 200 get_ac_auth | tee -a "${HOME}/${NAME}_get_ac_auth.ssv"
 
 echo "get_ss_secret"
 ./benchmark_rate.py "${CRT}" "${KEY}" 10 91 10 100 get_ss_secret "${COL}" "${SEC}" | tee "${HOME}/${NAME}_get_ss_secret.ssv"
