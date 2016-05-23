@@ -9,7 +9,8 @@ import requests
 import sys
 from concurrent import futures
 
-MIN_T = 1.0
+MAX_DELAY = 1.0 #Seconds
+BATCH_SIZE = 10 #Threads
 BASE_URI = "tutamen.vrg1.aws.volaticus.net"
 ACS_URI = "acs." + BASE_URI
 SS_URI = "ss." + BASE_URI
@@ -106,52 +107,60 @@ def res_time():
 
     return _decorator
 
-def target_iops(iops_target, duration, bm_function, *args, **kwargs):
+def target_iops(iops_target, cnt, function, *args, **kwargs):
 
-    threads = iops_target * MIN_T
-    cnt = iops_target * duration
-    pause = 1.0 / iops_target
+    @res_time()
+    def timed_function(*timed_args, **timed_kwargs):
+        try:
+            function(*timed_args, **timed_kwargs)
+        except Exception as error:
+            print(error)
+
+    threads = int(iops_target * MAX_DELAY)
+    pause = float(BATCH_SIZE) / float(iops_target)
+    rounds = int(cnt // BATCH_SIZE)
 
     futrs = []
     times = []
     start = time.time()
+
     with futures.ThreadPoolExecutor(max_workers=threads) as e:
-        for i in range(0, cnt):
+
+        rnd = 0
+        while True:
+            for k in range(0, BATCH_SIZE):
+                futrs.append(e.submit(timed_function, *args, **kwargs))
+            rnd += 1
             run_t_actual = time.time() - start
-            run_t_target = i * pause
+            run_t_target = rnd * pause
             if run_t_actual < run_t_target:
                 time.sleep(run_t_target - run_t_actual)
-            futrs.append(e.submit(bm_function, *args, **kwargs))
+            if rnd >= rounds:
+                break
+
         for f in futrs:
             times.append(f.result())
 
     tot = time.time() - start
     return tot, times
 
-def benchmark(iops_start, iops_end, iops_step, duration, function, *args, **kwargs):
-
-    @res_time()
-    def bm_function(*bm_args, **bm_kwargs):
-
-        try:
-            function(*bm_args, **bm_kwargs)
-        except Exception as error:
-            print(error)
+def benchmark(iops_start, iops_end, iops_step, cnt, function, *args, **kwargs):
 
     #Precook
     print("Precooking...")
-    target_iops(iops_start, duration, bm_function, *args, **kwargs)
+    target_iops(iops_start, cnt, function, *args, **kwargs)
 
     print("Benchmarking...")
-    print(" cnt | total |  iops  | latavg | latstd ")
-    for iops_target in range(iops_start, iops_end, iops_step):
+    print("   cnt  |  time  |  trgt  |  iops  | latavg | latstd ")
+    for tgt in range(iops_start, iops_end, iops_step):
 
-        tot, times = target_iops(iops_target, duration, bm_function, *args, **kwargs)
+        tot, times = target_iops(tgt, cnt, function, *args, **kwargs)
         cnt = len(times)
         iops = (float(cnt) / float(tot))
         avg = statistics.mean(times)
         std = statistics.pstdev(times)
-        print("{:4d} | {:5.1f} | {:6.1f} | {:6.3f} | {:5.3f}".format(cnt, tot, iops, avg, std))
+        print("  {:4d}     {:4.1f}     {:4d}   {:6.1f}    {:6.3f}   {:6.3f} ".format(cnt, tot, tgt,
+                                                                                     iops, avg, std))
 
 if __name__ == "__main__":
 
@@ -160,39 +169,39 @@ if __name__ == "__main__":
     iops_start = int(sys.argv[3])
     iops_end = int(sys.argv[4])
     iops_step = int(sys.argv[5])
-    duration = int(sys.argv[6])
+    cnt = int(sys.argv[6])
     test = sys.argv[7]
 
     if test == "get_ss_null":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ss_null)
 
     elif test == "get_ac_null":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ac_null)
 
     elif test == "get_ac_null_cert":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ac_null_cert, path_crt, path_key)
 
     elif test == "get_ac_https":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ac_https)
 
     elif test == "get_ss_https":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ss_https)
 
     elif test == "get_ac_http":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ac_http)
 
     elif test == "get_ss_http":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ss_http)
 
     elif test == "get_ac_auth":
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ac_auth, path_crt, path_key, "create", "storageserver")
 
     elif test == "get_ss_secret":
@@ -204,7 +213,7 @@ if __name__ == "__main__":
                                "read", "collection", col_uid)
         token = get_ac_token(path_crt, path_key, auth_uid)
 
-        benchmark(iops_start, iops_end, iops_step, duration,
+        benchmark(iops_start, iops_end, iops_step, cnt,
                   get_ss_secret, token, col_uid, sec_uid)
 
     else:
