@@ -148,11 +148,11 @@ def target_iops(iops_target, cnt, function, *args, **kwargs):
 def benchmark(iops_start, iops_end, iops_step, cnt, function, *args, **kwargs):
 
     #Precook
-    print("Precooking...")
+#    print("Precooking...")
     target_iops(iops_start, cnt, function, *args, **kwargs)
 
-    print("Benchmarking...")
-    print("   cnt  |  time  |  trgt  |  iops  | latavg | latstd ")
+#    print("Benchmarking...")
+#    print("   cnt  |  time  |  trgt  |  iops  | latavg | latstd ")
     for tgt in range(iops_start, iops_end, iops_step):
 
         tot, times = target_iops(tgt, cnt, function, *args, **kwargs)
